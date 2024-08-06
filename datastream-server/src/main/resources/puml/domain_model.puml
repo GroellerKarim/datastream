@@ -4,17 +4,19 @@
 class Workout <<Entity>> {
 WorkoutPlan! plan
 List<TrackedExercise>! exercises;
-OffsetDateTime! dateTime
+OffsetDateTime! startTime
+OffsetDateTime! endTime
 }
 
 class WorkoutPlan <<Entity>> {
 String! name
-List<Exercise>! exercises
+List<ExercisePlanEntry>! exercises
 List<DayOfWeek>! weekDays
 }
 
 enum TrackingData {
 DURATION
+DISTANCE
 WEIGHT
 BODYWEIGHT
 REPS
@@ -25,19 +27,34 @@ String! name
 String? description
 String? link
 List<TrackingData>! trackedData
+
 }
 
 class TrackedExercise <<Value Object>> {
 Exercise! exercise
 Duration? duration
+Float? distance
 Float? weight
 Float? bodyweight
 int? repetitions
 int? partialRepetitions
-boolean! failure
+
+boolean! toFailure
+OffsetDateTime dateTime
+int! position
 }
 
+class ExercisePlanEntry <<Value Object>> {
+Exercise! exercise
+int! sets
+int position
+}
 
-
+Exercise -- TrackedExercise
+Exercise -right- ExercisePlanEntry
+ExercisePlanEntry -right- WorkoutPlan
+TrackingData -right- Exercise
+TrackedExercise -right- Workout
+WorkoutPlan -down- Workout
 
 @enduml
