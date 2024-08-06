@@ -1,0 +1,43 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Workout <<Entity>> {
+WorkoutPlan! plan
+List<TrackedExercise>! exercises;
+OffsetDateTime! dateTime
+}
+
+class WorkoutPlan <<Entity>> {
+String! name
+List<Exercise>! exercises
+List<DayOfWeek>! weekDays
+}
+
+enum TrackingData {
+DURATION
+WEIGHT
+BODYWEIGHT
+REPS
+}
+
+class Exercise <<Entity>> {
+String! name
+String? description
+String? link
+List<TrackingData>! trackedData
+}
+
+class TrackedExercise <<Value Object>> {
+Exercise! exercise
+Duration? duration
+Float? weight
+Float? bodyweight
+int? repetitions
+int? partialRepetitions
+boolean! failure
+}
+
+
+
+
+@enduml
