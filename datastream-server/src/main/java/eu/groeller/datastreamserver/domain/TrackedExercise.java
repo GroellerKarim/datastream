@@ -36,4 +36,6 @@ public class TrackedExercise {
     private Integer partialRepetitions;
     @NotNull
     private Boolean toFailure;
+    @NotNull
+    private Integer position;
 }
