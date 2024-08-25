@@ -1,8 +1,6 @@
 package eu.groeller.datastreamserver.domain;
 
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -22,8 +20,9 @@ public class Workout extends AbstractEntity {
     @NotNull
     private WorkoutPlan workoutPlan;
 
-    @ElementCollection
+
     @NotEmpty
+    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, mappedBy = "workout")
     private List<TrackedExercise> trackedExercises = new ArrayList<>();
 
     @NotNull

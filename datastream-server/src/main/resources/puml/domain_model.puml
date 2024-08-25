@@ -30,7 +30,7 @@ List<TrackingData>! trackedData
 
 }
 
-class TrackedExercise <<Value Object>> {
+class TrackedExercise <<Entity>> {
 Exercise! exercise
 Duration? duration
 Float? distance
