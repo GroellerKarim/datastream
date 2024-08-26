@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 public record WorkoutDto(
-        int workoutPlanId,
+        long workoutPlanId,
         List<TrackedExerciseDto> exercises,
         OffsetDateTime startTime,
         OffsetDateTime endTime
