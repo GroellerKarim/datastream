@@ -5,7 +5,6 @@ import eu.groeller.datastreamserver.persistence.user.UserRepository;
 import eu.groeller.datastreamserver.presentation.request.user.UserLoginRequest;
 import eu.groeller.datastreamserver.presentation.request.user.UserRequest;
 import eu.groeller.datastreamserver.presentation.response.user.UserLoginResponse;
-import eu.groeller.datastreamserver.service.exceptions.UserNotFoundException;
 import eu.groeller.datastreamserver.service.security.JwtService;
 import eu.groeller.datastreamserver.service.utils.DtoUtils;
 import lombok.RequiredArgsConstructor;

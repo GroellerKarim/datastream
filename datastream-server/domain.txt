@@ -1,0 +1,54 @@
+# WorkoutObject
+{	
+	"user": Id
+	"Duration": Duration
+	"Date": LocalDateTime
+	"exercises": [
+		# Sets and Reps based exercise
+		{
+			"exercise" : "Pull Ups"
+			"startTime" : LocalDateNow() equal to first set startTime()
+			"sets" : [
+				{
+					"restTime": previous exercise - now() milliseconds #  if there was a previous exercise in Workout
+					"repetitions" : 5
+					"failure": boolean
+					"startTime" : LocalDateNow()
+					"endTime" : LocalDateNow()
+					"setDuration" : milliseconds
+				}
+			]
+			"endTime": Equal to last set time
+			"averageRestTime": Double # For the specific exercise
+		},
+		# Distance based
+		{
+			"exercise": "Running"
+			"startTime": LocalDateTime
+			"distance": Double
+			"distanceUnit": Unit
+			"duration": Seconds
+			"distancePerUnit": Double
+		},
+		# Sets time based
+		{
+			"exercise" : "Planks"
+				"startTime" : LocalDateNow() equal to first set startTime()
+				"sets" : [
+					{
+						"restTime": LocalDateNow() if there was a previous exercise in Workout
+						"repetitions" : 5
+						"failure": boolean
+						"startTime" : LocalDateNow()
+						"endTime" : LocalDateNow()
+						"setDuration" : milliseconds
+					}
+				]
+				"endTime": Equal to last set time
+				"averageRestTime": Double # For the specific exercise
+		}
+	]
+	"averageRestTime": Double
+	
+	
+}
