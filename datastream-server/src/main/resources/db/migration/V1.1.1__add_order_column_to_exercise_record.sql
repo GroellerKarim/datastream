@@ -1,0 +1,2 @@
+ALTER TABLE exercise_record
+ADD COLUMN "order" INTEGER NOT NULL DEFAULT 0;

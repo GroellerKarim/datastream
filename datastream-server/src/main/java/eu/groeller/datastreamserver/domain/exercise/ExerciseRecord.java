@@ -26,4 +26,7 @@ public abstract class ExerciseRecord extends AbstractEntity {
     
     @Column(nullable = false)
     private OffsetDateTime endTime;
+
+    @Column(nullable = false)
+    private Integer order;
 } 
