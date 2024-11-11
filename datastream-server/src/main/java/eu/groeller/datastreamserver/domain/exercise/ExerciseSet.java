@@ -28,4 +28,7 @@ public class ExerciseSet extends AbstractEntity {
     
     // For SETS_REPS type
     private Integer repetitions;
+
+    @Column(nullable = false)
+    private Integer order;
 }
