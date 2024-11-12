@@ -5,6 +5,7 @@ import eu.groeller.datastreamserver.domain.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Null;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.val;
 
@@ -39,9 +40,11 @@ public class Workout extends AbstractEntity {
     @Column(name = "average_rest_time")
     private Double averageRestTime;
 
-    public Workout(User user, OffsetDateTime date, List<ExerciseRecord> exercises) {
+    public Workout(@NonNull User user, @NonNull OffsetDateTime date, @NonNull List<ExerciseRecord> exercises) {
         this.user = user;
         this.date = date;
+
+        if(exercises.isEmpty()) throw new IllegalArgumentException("Exercises must not be empty!");
         this.exercises = new ArrayList<>(exercises);
 
         this.duration = getWorkoutDuration(this.exercises);
