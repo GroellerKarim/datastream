@@ -2,13 +2,17 @@ package eu.groeller.datastreamserver.service.security;
 
 import eu.groeller.datastreamserver.configuration.security.JwtConfig;
 import eu.groeller.datastreamserver.domain.User;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class JwtService {
@@ -35,6 +39,7 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody();
 
-        return claims.getSubject();
+        val subject = claims.getSubject();
+        return subject;
     }
 }

@@ -3,11 +3,7 @@ package eu.groeller.datastreamserver.domain.exercise;
 import eu.groeller.datastreamserver.domain.AbstractEntity;
 import eu.groeller.datastreamserver.domain.User;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Null;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import lombok.val;
+import lombok.*;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -16,6 +12,8 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+@NoArgsConstructor
 
 @Getter
 @Setter
