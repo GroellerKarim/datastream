@@ -3,6 +3,7 @@ package eu.groeller.datastreamserver.domain.exercise;
 import eu.groeller.datastreamserver.domain.AbstractEntity;
 import eu.groeller.datastreamserver.domain.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.time.Duration;
@@ -21,17 +22,18 @@ import java.util.stream.Collectors;
 @Table(name = "workout")
 public class Workout extends AbstractEntity {
 
+    @NotNull
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(nullable = false)
+    @NotNull
     private Long duration;
 
-    @Column(nullable = false)
+    @NotNull
     private OffsetDateTime date;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.PERSIST, orphanRemoval = true)
     @JoinColumn(name = "workout_id")
     private List<ExerciseRecord> exercises;
 
@@ -50,7 +52,7 @@ public class Workout extends AbstractEntity {
 
     private Long getWorkoutDuration(List<ExerciseRecord> exercises) {
         val exerciseList = exercises.stream()
-                .sorted(Comparator.comparingInt(ExerciseRecord::getOrder))
+                .sorted(Comparator.comparingInt(ExerciseRecord::getOrderIndex))
                 .collect(Collectors.toCollection(LinkedList::new));
 
         val firstExercise = exerciseList.getFirst();

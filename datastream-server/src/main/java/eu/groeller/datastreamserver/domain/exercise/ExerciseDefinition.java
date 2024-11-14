@@ -2,6 +2,7 @@ package eu.groeller.datastreamserver.domain.exercise;
 
 import eu.groeller.datastreamserver.domain.AbstractEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,10 +17,11 @@ import lombok.Setter;
 @Table(name = "exercise_definition")
 public class ExerciseDefinition extends AbstractEntity {
 
-    @Column(nullable = false, unique = true)
+    @NotNull
+    @Column(unique = true)
     private String name;
 
-    @Column(nullable = false)
+    @NotNull
     @Enumerated(EnumType.STRING)
     private ExerciseType type;
 

@@ -2,31 +2,39 @@ package eu.groeller.datastreamserver.domain.exercise;
 
 import eu.groeller.datastreamserver.domain.AbstractEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+
 import java.time.OffsetDateTime;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+
 @Entity
 @Table(name = "exercise_record")
 @Inheritance(strategy = InheritanceType.JOINED)
 public abstract class ExerciseRecord extends AbstractEntity {
-    
+
+    @NotNull
     @ManyToOne
-    @JoinColumn(name = "exercise_definition_id", nullable = false)
+    @JoinColumn(name = "exercise_definition_id")
     private ExerciseDefinition exerciseDefinition;
-    
+
+    @NotNull
     @ManyToOne
-    @JoinColumn(name = "workout_id", nullable = false)
+    @JoinColumn(name = "workout_id")
     private Workout workout;
-    
-    @Column(nullable = false)
+
+    @NotNull
     private OffsetDateTime startTime;
-    
-    @Column(nullable = false)
+
+    @NotNull
     private OffsetDateTime endTime;
 
-    @Column(nullable = false)
-    private Integer order;
+    @NotNull
+    private Integer orderIndex;
+
+
 } 

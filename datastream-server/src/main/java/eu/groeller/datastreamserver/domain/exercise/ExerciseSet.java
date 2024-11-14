@@ -2,6 +2,7 @@ package eu.groeller.datastreamserver.domain.exercise;
 
 import eu.groeller.datastreamserver.domain.AbstractEntity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import java.time.OffsetDateTime;
@@ -14,11 +15,11 @@ public class ExerciseSet extends AbstractEntity {
     
     @Column(name = "rest_time")
     private Long restTime;
-    
-    @Column(nullable = false)
+
+    @NotNull
     private OffsetDateTime startTime;
-    
-    @Column(nullable = false)
+
+    @NotNull
     private OffsetDateTime endTime;
     
     @Column(name = "set_duration")
@@ -29,6 +30,6 @@ public class ExerciseSet extends AbstractEntity {
     // For SETS_REPS type
     private Integer repetitions;
 
-    @Column(nullable = false)
-    private Integer order;
+    @NotNull
+    private Integer orderIndex;
 }
