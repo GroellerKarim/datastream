@@ -12,7 +12,7 @@ public record ExerciseRecordResponse(
         OffsetDateTime startTime,
         OffsetDateTime endTime,
         ExerciseRecordDetailsResponse details,
-        Integer order
+        Integer orderIndex
 ) {
     public ExerciseRecordResponse(ExerciseRecord record) {
         this(
@@ -22,7 +22,7 @@ public record ExerciseRecordResponse(
                 record.getStartTime(),
                 record.getEndTime(),
                 new ExerciseRecordDetailsResponse(record),
-                record.getOrder()
+                record.getOrderIndex()
         );
     }
 }
