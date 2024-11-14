@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.val;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.util.List;
 
 @Service
@@ -47,6 +48,7 @@ public class ExerciseRecordService {
         val record = new DistanceExerciseRecord();
         record.setExerciseDefinition(definition);
         record.setDistance(details.distance());
+        record.setDuration(Duration.between(request.startTime(),request.endTime()).toMillis());
         record.setDistanceUnit(details.distanceUnit());
         record.setWeightKg(details.weightKg());
         return record;
