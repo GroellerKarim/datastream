@@ -21,7 +21,7 @@ public class ExerciseRecordService {
     private final ExerciseRecordRepository exerciseRecordRepository;
 
     public ExerciseRecord createExerciseRecord(@NonNull ExerciseRecordRequest request) {
-        DtoUtils.checkNulls(request, List.of("exerciseDefinitionId", "startTime", "endTime"));
+        DtoUtils.checkNulls(request, List.of("exerciseDefinitionId", "startTime", "endTime", "order"));
 
         ExerciseDefinition definition = exerciseDefinitionRepository.findById(request.exerciseDefinitionId())
             .orElseThrow(() -> new IllegalArgumentException("Exercise definition not found"));
@@ -33,6 +33,7 @@ public class ExerciseRecordService {
 
         record.setStartTime(request.startTime());
         record.setEndTime(request.endTime());
+        record.setOrderIndex(request.order());
 
         return record;
     }
@@ -57,7 +58,7 @@ public class ExerciseRecordService {
         val record = new SetBasedExerciseRecord();
         record.setExerciseDefinition(definition);
         record.setWeightKg(details.weightKg());
-        
+
         List<ExerciseSet> sets = details.sets().stream()
             .map(this::createExerciseSet)
             .toList();
@@ -67,13 +68,14 @@ public class ExerciseRecordService {
     }
 
     private ExerciseSet createExerciseSet(@NonNull ExerciseSetRequest request) {
-        DtoUtils.checkNulls(request, List.of("startTime", "endTime", "failure", "repetitions"));
+        DtoUtils.checkAllNulls(request);
 
         var set = new ExerciseSet();
         set.setStartTime(request.startTime());
         set.setEndTime(request.endTime());
         set.setFailure(request.failure());
         set.setRepetitions(request.repetitions());
+        set.setOrderIndex(request.order());
         return set;
     }
 }

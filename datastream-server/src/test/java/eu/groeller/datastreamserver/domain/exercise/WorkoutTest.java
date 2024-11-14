@@ -83,7 +83,7 @@ class WorkoutTest {
         ExerciseRecord record = new DistanceExerciseRecord(); // Using concrete subclass for testing
         record.setStartTime(startTime);
         record.setEndTime(endTime);
-        record.setOrder(order);
+        record.setOrderIndex(order);
         return record;
     }
 }
