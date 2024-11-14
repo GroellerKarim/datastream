@@ -33,7 +33,7 @@ public class Workout extends AbstractEntity {
     @NotNull
     private OffsetDateTime date;
 
-    @OneToMany(cascade = CascadeType.PERSIST, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "workout_id")
     private List<ExerciseRecord> exercises;
 
@@ -46,6 +46,7 @@ public class Workout extends AbstractEntity {
 
         if(exercises.isEmpty()) throw new IllegalArgumentException("Exercises must not be empty!");
         this.exercises = new ArrayList<>(exercises);
+        this.exercises.forEach(exercise -> exercise.setWorkout(this));
 
         this.duration = getWorkoutDuration(this.exercises);
     }
