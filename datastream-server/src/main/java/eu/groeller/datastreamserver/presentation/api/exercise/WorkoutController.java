@@ -1,8 +1,8 @@
 package eu.groeller.datastreamserver.presentation.api.exercise;
 
 import eu.groeller.datastreamserver.configuration.security.CustomUserDetails;
-import eu.groeller.datastreamserver.domain.exercise.Workout;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutRequest;
+import eu.groeller.datastreamserver.presentation.response.exercise.WorkoutResponse;
 import eu.groeller.datastreamserver.service.exercise.WorkoutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +20,7 @@ public class WorkoutController {
     private final WorkoutService workoutService;
 
     @PostMapping
-    public ResponseEntity<Workout> createWorkout(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestBody CreateWorkoutRequest request) {
-        return ResponseEntity.ok(workoutService.createWorkout(userDetails.getUser(), request));
+    public ResponseEntity<WorkoutResponse> createWorkout(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestBody CreateWorkoutRequest request) {
+        return ResponseEntity.ok(new WorkoutResponse(workoutService.createWorkout(userDetails.getUser(), request)));
     }
 }
