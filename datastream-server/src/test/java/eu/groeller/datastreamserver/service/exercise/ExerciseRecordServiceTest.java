@@ -88,7 +88,7 @@ public class ExerciseRecordServiceTest {
         // Arrange
         ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
         List<ExerciseSetRequest> setRequests = List.of(
-            new ExerciseSetRequest(now, now.plusMinutes(1), false, 12)
+            new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, 1)
         );
         
         val details = new ExerciseRecordDetailsRequest(
@@ -111,7 +111,7 @@ public class ExerciseRecordServiceTest {
         SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
         assertThat(setRecord.getWeightKg()).isEqualTo(75.0);
         assertThat(setRecord.getSets()).hasSize(1);
-        assertThat(setRecord.getSets().get(0).getRepetitions()).isEqualTo(12);
+        assertThat(setRecord.getSets().getFirst().getRepetitions()).isEqualTo(12);
     }
 
     @Test
@@ -148,7 +148,7 @@ public class ExerciseRecordServiceTest {
     void createExerciseRecord_WhenSetBasedExerciseWithInvalidSet_ThrowsNullPointerException() {
         ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
         List<ExerciseSetRequest> setRequests = List.of(
-            new ExerciseSetRequest(now, now.plusMinutes(1), null, null) // missing required fields
+            new ExerciseSetRequest(now, now.plusMinutes(1), null, null,0) // missing required fields
         );
         
         val details = new ExerciseRecordDetailsRequest(
