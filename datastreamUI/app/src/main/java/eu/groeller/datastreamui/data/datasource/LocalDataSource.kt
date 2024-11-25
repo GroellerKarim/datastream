@@ -16,6 +16,15 @@ class LocalDataSource(private val dataStore: DataStore<Preferences>) {
     val usernameKey = stringPreferencesKey("username")
     val emailKey = stringPreferencesKey("email")
 
+    val user: Flow<User?> = dataStore.data.map {
+        val token = it[tokenKey]
+        val username = it[usernameKey]
+        val email = it[emailKey]
+        if(token == null || username == null || email == null) return@map null
+
+        User(username, email, token)
+    }
+
     suspend fun readToken(): String? {
         return dataStore.data.map { preferences -> preferences[tokenKey] }.first()
     }
@@ -37,5 +46,7 @@ class LocalDataSource(private val dataStore: DataStore<Preferences>) {
             preferencesDataStore[usernameKey] = user.username
             preferencesDataStore[emailKey] = user.email
         }
+
+        this.user.map { user }
     }
 }
