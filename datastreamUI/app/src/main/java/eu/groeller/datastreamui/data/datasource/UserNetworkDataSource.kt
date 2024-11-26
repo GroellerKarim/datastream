@@ -11,7 +11,18 @@ import io.ktor.http.contentType
 
 class UserNetworkDataSource(private val httpClient: HttpClient) {
 
-    private data class LoginRequest(private val email: String, private val password: String)
+
+    private data class RegisterRequest(val username: String, val email: String, val password: String)
+
+    suspend fun registerUser(username: String, email: String, password: String) {
+        val response = httpClient.post("/users/regiser") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(username, email, password))
+        }
+        // TODO Handle Exceptions
+    }
+
+    private data class LoginRequest(val email: String, val password: String)
 
     suspend fun loginUser(email: String, password: String): User {
 
