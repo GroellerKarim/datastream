@@ -4,7 +4,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import eu.groeller.datastreamui.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -16,7 +15,7 @@ class LocalDataSource(private val dataStore: DataStore<Preferences>) {
     val usernameKey = stringPreferencesKey("username")
     val emailKey = stringPreferencesKey("email")
 
-    val user: Flow<User?> = dataStore.data.map {
+    val userStream: Flow<User?> = dataStore.data.map {
         val token = it[tokenKey]
         val username = it[usernameKey]
         val email = it[emailKey]
@@ -47,6 +46,6 @@ class LocalDataSource(private val dataStore: DataStore<Preferences>) {
             preferencesDataStore[emailKey] = user.email
         }
 
-        this.user.map { user }
+        this.userStream.map { user }
     }
 }
