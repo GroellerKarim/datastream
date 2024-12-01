@@ -29,21 +29,20 @@ import eu.groeller.datastreamui.ui.theme.DatastreamUITheme
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
-val Context.datastore: DataStore<Preferences> by preferencesDataStore("settings")
 
+public val Context.datastore: DataStore<Preferences> by preferencesDataStore("settings")
 class MainActivity : ComponentActivity() {
 
     private var token: String? = null
     private lateinit var authService: AuthService
-
+    private lateinit var injectionHolder: InjectionManager
     override fun onCreate(savedInstanceState: Bundle?) {
-        authService = AuthService(this, datastore)
-
-        lifecycleScope.launch {
-            token = authService.readToken()
-        }
-
         super.onCreate(savedInstanceState)
+
+        injectionHolder = InjectionManager(datastore)
+        lifecycleScope.launch {
+            token = injectionHolder.localDataSource.readToken()
+        }
 
         enableEdgeToEdge()
         setContent {
