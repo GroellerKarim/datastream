@@ -12,7 +12,7 @@ class HttpClientConfigurer {
 
     val v1HttpClient: HttpClient = HttpClient() {
         engine {
-            proxy = ProxyBuilder.http("84.115.221.183:$port/api/v1")
+            proxy = ProxyBuilder.http("http://192.168.0.81:$port/api/v1")
         }
     }
 
