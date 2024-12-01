@@ -8,7 +8,7 @@ import java.net.Proxy
 
 class HttpClientConfigurer {
 
-    val port = 7974
+    val port = 8080
 
     val v1HttpClient: HttpClient = HttpClient() {
         engine {
