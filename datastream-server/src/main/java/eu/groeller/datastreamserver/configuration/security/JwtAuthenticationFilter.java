@@ -33,13 +33,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
+        log.trace("Auth-Header [{}]", authHeader);
         
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.trace("No proper auth-header present [{}]", authHeader);
             filterChain.doFilter(request, response);
             return;
         }
 
         final String jwt = authHeader.substring(7); // Remove "Bearer " prefix
+        log.debug("Calling jwtService:validateTokenAndGetEmail");
         final String userSubject = jwtService.validateTokenAndGetEmail(jwt);
 
         if (userSubject != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -52,9 +55,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             );
             
             authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            log.debug("Setting new Authentication Details for user [{}]", userDetails.getUsername());
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }
 
+        log.info("Finished JwtAuthenticationFilter, progressing through other filters");
         filterChain.doFilter(request, response);
     }
 }
