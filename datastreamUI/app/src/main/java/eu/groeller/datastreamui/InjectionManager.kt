@@ -3,7 +3,7 @@ package eu.groeller.datastreamui
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import eu.groeller.datastreamui.data.HttpClientConfigurer
-import eu.groeller.datastreamui.data.UserRepository
+import eu.groeller.datastreamui.data.user.UserRepository
 import eu.groeller.datastreamui.data.datasource.LocalDataSource
 import eu.groeller.datastreamui.data.datasource.UserNetworkDataSource
 
