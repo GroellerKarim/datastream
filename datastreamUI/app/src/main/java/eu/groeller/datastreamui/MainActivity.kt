@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -24,7 +25,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import eu.groeller.datastreamui.service.AuthService
 import eu.groeller.datastreamui.ui.theme.DatastreamUITheme
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -34,7 +34,6 @@ public val Context.datastore: DataStore<Preferences> by preferencesDataStore("se
 class MainActivity : ComponentActivity() {
 
     private var token: String? = null
-    private lateinit var authService: AuthService
     private lateinit var injectionHolder: InjectionManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,7 +77,8 @@ fun MainMenuView(token: String) {
 }
 
 @Composable
-fun LoginMenuView() {
+fun LoginMenuView(
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
