@@ -20,6 +20,7 @@ public class JwtService {
     private final JwtConfig jwtConfig;
 
     public String generateToken(User user) {
+        log.debug("Generating Token for user [id: {}]", user.getId());
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtConfig.getExpiration().toMillis());
 
@@ -33,6 +34,7 @@ public class JwtService {
     }
 
     public String validateTokenAndGetEmail(String token) {
+        log.debug("Validating authentication token...");
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes()))
                 .build()
@@ -40,6 +42,7 @@ public class JwtService {
                 .getBody();
 
         val subject = claims.getSubject();
+        log.debug("Validated Token for user [id: {}]", subject);
         return subject;
     }
 }
