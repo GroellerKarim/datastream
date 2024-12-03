@@ -8,7 +8,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -25,7 +24,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import eu.groeller.datastreamui.screens.DashScreen
 import eu.groeller.datastreamui.ui.theme.DatastreamUITheme
+import eu.groeller.datastreamui.viewmodel.DashViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -45,18 +46,13 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            DatastreamUITheme {
-                val navController = rememberNavController()
-                NavHost(
-                    navController = navController,
-                    startDestination = if (token == null) LoginMenu else MainMenu
-                ) {
-                    composable<LoginMenu> {
-                        LoginMenuView()
-                    }
-                    composable<MainMenu> {
-                        MainMenuView(token!!)
-                    }
+            val navController = rememberNavController()
+            NavHost(
+                navController = navController,
+                startDestination = DashScreenRoute
+            ) {
+                composable<DashScreenRoute> {
+                    DashScreen(DashViewModel(injectionHolder.userRepository))
                 }
             }
         }
@@ -67,7 +63,7 @@ class MainActivity : ComponentActivity() {
 object LoginMenu
 
 @Serializable
-object MainMenu
+object DashScreenRoute
 
 @Composable
 fun MainMenuView(token: String) {
