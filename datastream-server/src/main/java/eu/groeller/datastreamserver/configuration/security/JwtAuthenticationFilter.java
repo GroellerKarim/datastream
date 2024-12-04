@@ -36,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         log.trace("Auth-Header [{}]", authHeader);
         
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            log.warn("No proper auth-header present [{}]", authHeader);
+            log.info("No proper auth-header present [{}]", authHeader);
             log.info("Finished JwtAuthenticationFilter, progressing through other filters");
             filterChain.doFilter(request, response);
             return;
