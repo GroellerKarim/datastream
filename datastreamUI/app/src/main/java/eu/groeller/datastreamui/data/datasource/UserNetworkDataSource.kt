@@ -57,7 +57,7 @@ class UserNetworkDataSource(private val httpClient: HttpClient) {
     private data class FetchUserWithTokenResponse(val username: String, val email: String)
     suspend fun fetchUserWithToken(token: String): UserState {
         if(this::user.isInitialized) return UserState.Success(user)
-        val response = httpClient.get("$V1_PATH/users") {
+        val response = httpClient.get("$V1_PATH/users/token") {
             bearerAuth(token)
         }
 
