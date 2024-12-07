@@ -8,6 +8,7 @@ import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutR
 import eu.groeller.datastreamserver.service.utils.DtoUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkoutService {
-    private static final Logger logger = LoggerFactory.getLogger(WorkoutService.class);
 
     private final WorkoutRepository workoutRepository;
     private final ExerciseRecordService exerciseRecordService;
@@ -43,11 +44,11 @@ public class WorkoutService {
 
     @Transactional(readOnly = true)
     public Set<Workout> getWorkouts(@NonNull User user) {
-        logger.debug("Retrieving workouts for user: {}", user.getUsername());
+        log.debug("Retrieving workouts for user: {}", user.getUsername());
         
         Set<Workout> workouts = workoutRepository.findByUser(user);
         
-        logger.debug("Found {} workouts for user: {}", workouts.size(), user.getUsername());
+        log.debug("Found {} workouts for user: {}", workouts.size(), user.getUsername());
         return workouts;
     }
 }
