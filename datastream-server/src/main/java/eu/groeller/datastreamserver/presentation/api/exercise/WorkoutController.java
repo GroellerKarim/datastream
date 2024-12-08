@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/workout")
+@RequestMapping("/api/v1/workouts")
 @RequiredArgsConstructor
 public class WorkoutController {
 
