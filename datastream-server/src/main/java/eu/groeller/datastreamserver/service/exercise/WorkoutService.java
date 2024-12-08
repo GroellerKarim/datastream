@@ -11,9 +11,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -27,7 +32,7 @@ public class WorkoutService {
 
     @Transactional
     public Workout createWorkout(@NonNull User user, @NonNull CreateWorkoutRequest request) {
-        DtoUtils.checkNulls(request, List.of("date", "exercises"));
+        DtoUtils.checkNulls(request, List.of("exercises"));
 
         if (request.exercises().isEmpty()) {
             throw new IllegalArgumentException("Exercises must not be empty");
@@ -38,17 +43,17 @@ public class WorkoutService {
                 .map(exerciseRecordService::createExerciseRecord)
                 .toList();
 
-        Workout workout = new Workout(user, request.date(), exerciseRecords);
+        Workout workout = new Workout(user, OffsetDateTime.now(), exerciseRecords);
         return workoutRepository.save(workout);
     }
 
     @Transactional(readOnly = true)
-    public Set<Workout> getWorkouts(@NonNull User user) {
+    public Slice<Workout> getWorkouts(@NonNull User user) {
         log.debug("Retrieving workouts for user: {}", user.getUsername());
+
+        Slice<Workout> workouts = workoutRepository.findByUserOrderByCreatedAtDesc(user, Pageable.ofSize(4));
         
-        Set<Workout> workouts = workoutRepository.findByUser(user);
-        
-        log.debug("Found {} workouts for user: {}", workouts.size(), user.getUsername());
+        log.debug("Found {} workouts for user: {}", workouts.getSize(), user.getUsername());
         return workouts;
     }
 }

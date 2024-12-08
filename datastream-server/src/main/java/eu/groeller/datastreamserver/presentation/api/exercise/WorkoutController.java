@@ -7,6 +7,7 @@ import eu.groeller.datastreamserver.service.exercise.WorkoutService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,15 +41,13 @@ public class WorkoutController {
     }
 
     @GetMapping
-    public ResponseEntity<Set<WorkoutResponse>> getWorkouts(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    public ResponseEntity<Slice<WorkoutResponse>> getWorkouts(@AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("Retrieving workouts for user: {}", userDetails.getUsername());
         
         val responses = workoutService.getWorkouts(userDetails.getUser())
-                .stream()
-                .map(WorkoutResponse::new)
-                .collect(Collectors.toSet());
+                        .map(WorkoutResponse::new);
 
-        log.info("Retrieved {} workouts for user: {}", responses.size(), userDetails.getUsername());
+        log.info("Retrieved {} workouts for user: {}", responses.getSize(), userDetails.getUsername());
         log.debug("Workout IDs: {}", responses.stream().map(WorkoutResponse::workoutId).collect(Collectors.toSet()));
         
         return ResponseEntity.ok(responses);
