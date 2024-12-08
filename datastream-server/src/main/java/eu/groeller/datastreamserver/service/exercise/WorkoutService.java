@@ -29,6 +29,7 @@ public class WorkoutService {
 
     private final WorkoutRepository workoutRepository;
     private final ExerciseRecordService exerciseRecordService;
+    private final Clock clock;
 
     @Transactional
     public Workout createWorkout(@NonNull User user, @NonNull CreateWorkoutRequest request) {
@@ -43,7 +44,7 @@ public class WorkoutService {
                 .map(exerciseRecordService::createExerciseRecord)
                 .toList();
 
-        Workout workout = new Workout(user, OffsetDateTime.now(), exerciseRecords);
+        Workout workout = new Workout(user, OffsetDateTime.now(clock), exerciseRecords);
         return workoutRepository.save(workout);
     }
 
