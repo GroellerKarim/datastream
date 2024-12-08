@@ -14,9 +14,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import eu.groeller.datastreamui.data.workout.WorkoutRepository
 import eu.groeller.datastreamui.screens.DashScreen
 import eu.groeller.datastreamui.screens.LoginScreen
+import eu.groeller.datastreamui.screens.WorkoutScreen
 import eu.groeller.datastreamui.viewmodel.DashViewModel
+import eu.groeller.datastreamui.viewmodel.WorkoutViewModel
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -42,9 +46,14 @@ class MainActivity : ComponentActivity() {
                 startDestination = DashRoute
             ) {
                 composable<DashRoute> {
-                    DashScreen(DashViewModel(injectionHolder.userRepository), )
+                    DashScreen(DashViewModel(injectionHolder.userRepository),
+                        onWorkoutButtonClicked = { user -> navController.navigate(WorkoutRoute(user.username, user.token)) } )
                 }
-                composable<WorkoutRoute> {  }
+                composable<WorkoutRoute> { backStackEntry ->
+                    val args = backStackEntry.toRoute<WorkoutRoute>()
+                    val workoutRepository = WorkoutRepository(injectionHolder.httpConfig.v1HttpClient, User(args.username, "hihi", args.token))
+                    WorkoutScreen(WorkoutViewModel(workoutRepository))
+                }
             }
         }
     }
@@ -52,4 +61,4 @@ class MainActivity : ComponentActivity() {
 
 
 @Serializable object DashRoute
-@Serializable object WorkoutRoute
+@Serializable data class WorkoutRoute(val username: String, val token: String)
