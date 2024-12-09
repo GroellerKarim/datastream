@@ -41,12 +41,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(final Exception ex) {
         val errorResponse = new ErrorResponse(
-            "An unexpected error occurred"
+                ex.getMessage()
         );
         return buildResponseAndLog(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse, ex);
     }
 
-    private ResponseEntity<ErrorResponse> buildResponseAndLog(@NonNull HttpStatus status,@NonNull ErrorResponse err,@NonNull Exception ex) {
+    private ResponseEntity<ErrorResponse> buildResponseAndLog(@NonNull HttpStatus status, @NonNull ErrorResponse err, @NonNull Exception ex) {
         log.trace("Request finished with error", ex);
         return ResponseEntity.status(status).body(err);
     }
