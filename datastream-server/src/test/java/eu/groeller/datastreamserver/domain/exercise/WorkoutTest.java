@@ -23,7 +23,7 @@ class WorkoutTest {
 
     @Test
     void constructor_WhenExerciseListIsEmpty_ThrowsIllegalArgumentException() {
-        assertThatThrownBy(() -> new Workout(testUser, now, List.of()))
+        assertThatThrownBy(() -> new Workout(testUser, now, List.of(), new WorkoutType()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Exercises must not be empty");
     }
@@ -32,7 +32,7 @@ class WorkoutTest {
     void constructor_WhenUserIsNull_ThrowsNullPointerException() {
         ExerciseRecord record = createTestExerciseRecord();
         
-        assertThatThrownBy(() -> new Workout(null, now, List.of(record)))
+        assertThatThrownBy(() -> new Workout(null, now, List.of(record), new WorkoutType()))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -40,13 +40,19 @@ class WorkoutTest {
     void constructor_WhenDateIsNull_ThrowsNullPointerException() {
         ExerciseRecord record = createTestExerciseRecord();
         
-        assertThatThrownBy(() -> new Workout(testUser, null, List.of(record)))
+        assertThatThrownBy(() -> new Workout(testUser, null, List.of(record), new WorkoutType()))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void constructor_WhenExerciseListIsNull_ThrowsNullPointerException() {
-        assertThatThrownBy(() -> new Workout(testUser, now, null))
+        assertThatThrownBy(() -> new Workout(testUser, now, null, new WorkoutType()))
+                .isInstanceOf(NullPointerException.class);
+    }
+    @Test
+    void constructor_WhenWorkoutTypeIsNull_ThrowsNullPointerException() {
+        ExerciseRecord record = createTestExerciseRecord();
+        assertThatThrownBy(() -> new Workout(testUser, now, List.of(record), null))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -56,7 +62,7 @@ class WorkoutTest {
         ExerciseRecord record = createTestExerciseRecord();
         
         // Act
-        Workout workout = new Workout(testUser, now, List.of(record));
+        Workout workout = new Workout(testUser, now, List.of(record), new WorkoutType());
 
         // Assert
         assertThat(workout.getDuration()).isEqualTo(30 * 60 * 1000); // 30 minutes in milliseconds
@@ -69,7 +75,7 @@ class WorkoutTest {
         ExerciseRecord secondExercise = createTestExerciseRecord(1, now.plusMinutes(35), now.plusMinutes(65));
         
         // Act
-        Workout workout = new Workout(testUser, now, List.of(firstExercise, secondExercise));
+        Workout workout = new Workout(testUser, now, List.of(firstExercise, secondExercise), new WorkoutType());
 
         // Assert
         assertThat(workout.getDuration()).isEqualTo(65 * 60 * 1000); // 65 minutes in milliseconds
