@@ -7,6 +7,7 @@ import eu.groeller.datastreamserver.service.exercise.WorkoutService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,10 +42,10 @@ public class WorkoutController {
     }
 
     @GetMapping
-    public ResponseEntity<Slice<WorkoutResponse>> getWorkouts(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        log.info("Retrieving workouts for user: {}", userDetails.getUsername());
+    public ResponseEntity<Slice<WorkoutResponse>> getWorkouts(@AuthenticationPrincipal CustomUserDetails userDetails, Pageable pageable) {
+        log.info("Retrieving workouts for user: {}, with pageable [{}]", userDetails.getUsername(), pageable);
         
-        val responses = workoutService.getWorkouts(userDetails.getUser())
+        val responses = workoutService.getWorkouts(userDetails.getUser(), pageable)
                         .map(WorkoutResponse::new);
 
         log.info("Retrieved {} workouts for user: {}", responses.getSize(), userDetails.getUsername());

@@ -49,10 +49,10 @@ public class WorkoutService {
     }
 
     @Transactional(readOnly = true)
-    public Slice<Workout> getWorkouts(@NonNull User user) {
+    public Slice<Workout> getWorkouts(@NonNull User user, @NonNull Pageable pageable) {
         log.debug("Retrieving workouts for user: {}", user.getUsername());
 
-        Slice<Workout> workouts = workoutRepository.findByUserOrderByCreatedAtDesc(user, Pageable.ofSize(4));
+        Slice<Workout> workouts = workoutRepository.findByUserOrderByCreatedAtDesc(user, pageable);
         
         log.debug("Found {} workouts for user: {}", workouts.getSize(), user.getUsername());
         return workouts;
