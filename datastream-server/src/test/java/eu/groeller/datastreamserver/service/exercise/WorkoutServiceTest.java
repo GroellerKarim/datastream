@@ -6,12 +6,15 @@ import eu.groeller.datastreamserver.domain.exercise.Workout;
 import eu.groeller.datastreamserver.persistence.exercise.WorkoutRepository;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutRequest;
 import eu.groeller.datastreamserver.presentation.request.exercise.ExerciseRecordRequest;
+import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -29,15 +32,17 @@ public class WorkoutServiceTest {
     @Mock
     private ExerciseRecordService exerciseRecordService;
 
+    @Mock
+    private Clock clock;
+
     private WorkoutService workoutService;
     private User testUser;
-    private OffsetDateTime now;
+
 
     @BeforeEach
     void setUp() {
-        workoutService = new WorkoutService(workoutRepository, exerciseRecordService);
+        workoutService = new WorkoutService(workoutRepository, exerciseRecordService, clock);
         testUser = new User("testuser", "test@example.com", "password");
-        now = OffsetDateTime.now();
     }
 
     @Test
@@ -51,7 +56,7 @@ public class WorkoutServiceTest {
 
     @Test
     void createWorkout_WhenUserIsNull_ThrowsNullPointerException() {
-        CreateWorkoutRequest request = new CreateWorkoutRequest(now, List.of());
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of());
 
         assertThatThrownBy(() -> workoutService.createWorkout(null, request))
                 .isInstanceOf(NullPointerException.class);
@@ -61,20 +66,8 @@ public class WorkoutServiceTest {
     }
 
     @Test
-    void createWorkout_WhenDateIsNull_ThrowsNullPointerException() {
-        CreateWorkoutRequest request = new CreateWorkoutRequest(null, List.of());
-
-        assertThatThrownBy(() -> workoutService.createWorkout(testUser, request))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("date");
-        
-        verify(workoutRepository, never()).save(any());
-        verify(exerciseRecordService, never()).createExerciseRecord(any());
-    }
-
-    @Test
     void createWorkout_WhenExercisesIsNull_ThrowsNullPointerException() {
-        CreateWorkoutRequest request = new CreateWorkoutRequest(now, null);
+        CreateWorkoutRequest request = new CreateWorkoutRequest(null);
 
         assertThatThrownBy(() -> workoutService.createWorkout(testUser, request))
                 .isInstanceOf(NullPointerException.class)
@@ -87,8 +80,12 @@ public class WorkoutServiceTest {
     @Test
     void createWorkout_WhenValidRequest_CreatesWorkout() {
         // Arrange
+        val now = OffsetDateTime.now();
+        when(clock.instant()).thenReturn(now.toInstant());
+        when(clock.getZone()).thenReturn(now.toZonedDateTime().getZone());
+
         ExerciseRecordRequest exerciseRequest = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), null, 1);
-        CreateWorkoutRequest request = new CreateWorkoutRequest(now, List.of(exerciseRequest));
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(exerciseRequest));
         
         ExerciseRecord mockExerciseRecord = mock(ExerciseRecord.class);
         when(mockExerciseRecord.getStartTime()).thenReturn(now);
@@ -116,7 +113,7 @@ public class WorkoutServiceTest {
     @Test
     void createWorkout_WhenExerciseListIsEmpty_ThrowsIllegalArgumentException() {
         // Arrange
-        CreateWorkoutRequest request = new CreateWorkoutRequest(now, List.of());
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of());
 
         // Act & Assert
         assertThatThrownBy(() -> workoutService.createWorkout(testUser, request))
