@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 public record CreateWorkoutRequest(
-        List<ExerciseRecordRequest> exercises
+        List<ExerciseRecordRequest> exercises,
+        String type
 ) {
 }
