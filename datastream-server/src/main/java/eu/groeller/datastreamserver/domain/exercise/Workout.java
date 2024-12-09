@@ -33,6 +33,10 @@ public class Workout extends AbstractEntity {
     @NotNull
     private OffsetDateTime date;
 
+    @ManyToOne
+    @NotNull
+    private WorkoutType workoutType;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "workout_id")
     private List<ExerciseRecord> exercises;
@@ -40,9 +44,10 @@ public class Workout extends AbstractEntity {
     @Column(name = "average_rest_time")
     private Double averageRestTime;
 
-    public Workout(@NonNull User user, @NonNull OffsetDateTime date, @NonNull List<ExerciseRecord> exercises) {
+    public Workout(@NonNull User user, @NonNull OffsetDateTime date, @NonNull List<ExerciseRecord> exercises, @NonNull WorkoutType type) {
         this.user = user;
         this.date = date;
+        this.workoutType = type;
 
         if(exercises.isEmpty()) throw new IllegalArgumentException("Exercises must not be empty!");
         this.exercises = new ArrayList<>(exercises);
