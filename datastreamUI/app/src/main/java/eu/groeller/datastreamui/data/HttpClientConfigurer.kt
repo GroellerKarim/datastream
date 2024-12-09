@@ -13,7 +13,9 @@ class HttpClientConfigurer {
 
     val v1HttpClient: HttpClient = HttpClient() {
         install(ContentNegotiation) {
-            json()
+            json(kotlinx.serialization.json.Json {
+                ignoreUnknownKeys = true
+            })
         }
         install(DefaultRequest) {
             url(baseUrl)
