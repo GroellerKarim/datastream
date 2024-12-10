@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.absolutePadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -73,7 +74,13 @@ fun WorkoutScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         DateBox(date = workout.date)
-                        Text(workout.name)
+                        Column(
+                            modifier = Modifier.fillMaxSize().absolutePadding(left = 5.dp),
+                            horizontalAlignment = Alignment.Start,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(workout.name)
+                        }
                     }
                     if (workoutIterator.hasNext())
                         HorizontalDivider(thickness = 2.dp, color = Color.Gray)
