@@ -31,6 +31,7 @@ import eu.groeller.datastreamui.User
 import eu.groeller.datastreamui.data.model.WorkoutResponse
 import eu.groeller.datastreamui.data.workout.WorkoutState
 import eu.groeller.datastreamui.viewmodel.WorkoutViewModel
+import eu.groeller.datastreamui.widgets.DateBox
 import java.time.OffsetDateTime
 
 @Composable
@@ -82,12 +83,5 @@ fun WorkoutScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {  }
-    }
-}
-
-@Composable
-fun DateBox(date: OffsetDateTime) {
-    Box(modifier = Modifier.border(1.dp, Color.Black).fillMaxSize(0.2f)) {
-
     }
 }
