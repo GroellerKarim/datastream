@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShapeDefaults
@@ -87,8 +88,30 @@ fun WorkoutScreen(
                 }
             }
         }
-        Column(
+        Row(
             modifier = Modifier.fillMaxSize()
-        ) {  }
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize(0.5f).weight(1f)
+                    .border(BorderStroke(2.dp, Color.Black), shape = RoundedCornerShape(9.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("Calendar / Workout Plan")
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxSize(0.25f).weight(1f)
+                .border(BorderStroke(2.dp, Color.Black), shape = RoundedCornerShape(9.dp)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Button(onClick = { }) {
+                Text("Track")
+            }
+            Button(onClick = { }) {
+                Text("Statistics")
+            }
+        }
     }
 }
