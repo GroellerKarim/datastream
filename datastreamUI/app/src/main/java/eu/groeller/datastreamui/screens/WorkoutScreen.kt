@@ -88,29 +88,30 @@ fun WorkoutScreen(
                 }
             }
         }
-        Row(
+        Column(
             modifier = Modifier.fillMaxSize()
+                .border(BorderStroke(2.dp, Color.Black), shape = RoundedCornerShape(9.dp)),
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(0.5f).weight(1f)
+                modifier = Modifier.fillMaxSize().weight(1f)
                     .border(BorderStroke(2.dp, Color.Black), shape = RoundedCornerShape(9.dp)),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
                 Text("Calendar / Workout Plan")
             }
-        }
-        Row(
-            modifier = Modifier.fillMaxSize(0.25f).weight(1f)
-                .border(BorderStroke(2.dp, Color.Black), shape = RoundedCornerShape(9.dp)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            Button(onClick = { }) {
-                Text("Track")
-            }
-            Button(onClick = { }) {
-                Text("Statistics")
+            Row(
+                modifier = Modifier.fillMaxSize().weight(1f)
+                    .border(BorderStroke(2.dp, Color.Black), shape = RoundedCornerShape(9.dp)),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Button(onClick = { }) {
+                    Text("Track")
+                }
+                Button(onClick = { }) {
+                    Text("Statistics")
+                }
             }
         }
     }
