@@ -20,7 +20,7 @@ import java.time.OffsetDateTime
 
 @Composable
 fun DateBox(date: OffsetDateTime) {
-    Box(modifier = Modifier.border(1.dp, Color.Black).fillMaxHeight(0.8f).fillMaxWidth(0.135f).padding(horizontal = 5.dp)) {
+    Box(modifier = Modifier.border(1.dp, Color.Black).fillMaxHeight().fillMaxWidth(0.135f).padding(horizontal = 5.dp)) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,

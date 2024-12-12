@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ShapeDefaults
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -72,15 +73,21 @@ fun WorkoutScreen(
                     val workout = workoutIterator.next()
                     Row(
                         modifier = Modifier.fillMaxWidth().fillMaxHeight().weight(1f).padding(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        DateBox(date = workout.date)
-                        Column(
-                            modifier = Modifier.fillMaxSize().absolutePadding(left = 5.dp),
-                            horizontalAlignment = Alignment.Start,
-                            verticalArrangement = Arrangement.Center
+                        TextButton(
+                            modifier = Modifier.fillMaxSize(),
+                            onClick = { },
+                            shape = RectangleShape,
                         ) {
-                            Text(workout.name)
+                            DateBox(date = workout.date)
+                            Column(
+                                modifier = Modifier.fillMaxSize().absolutePadding(left = 5.dp),
+                                horizontalAlignment = Alignment.Start,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(workout.name)
+                            }
                         }
                     }
                     if (workoutIterator.hasNext())
