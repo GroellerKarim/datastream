@@ -40,11 +40,12 @@ import java.time.OffsetDateTime
 @Composable
 fun WorkoutScreen(
     viewModel: WorkoutViewModel = viewModel(),
+    viewRecentWorkout: (WorkoutResponse) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val currentState = uiState) {
-        is WorkoutState.Success -> WorkoutScreen(currentState.workouts)
+        is WorkoutState.Success -> WorkoutScreen(currentState.workouts, viewRecentWorkout)
         is WorkoutState.Error -> Text(currentState.error.message)
         is WorkoutState.Loading -> Text("Loading...")
     }
@@ -52,7 +53,8 @@ fun WorkoutScreen(
 
 @Composable
 fun WorkoutScreen(
-    workouts: List<WorkoutResponse>
+    workouts: List<WorkoutResponse>,
+    viewRecentWorkout: (WorkoutResponse) -> Unit
 ) {
     Column (
         modifier = Modifier.fillMaxSize(),
@@ -77,7 +79,7 @@ fun WorkoutScreen(
                     ) {
                         TextButton(
                             modifier = Modifier.fillMaxSize(),
-                            onClick = { },
+                            onClick = { viewRecentWorkout(workout) },
                             shape = RectangleShape,
                         ) {
                             DateBox(date = workout.date)

@@ -13,12 +13,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+import eu.groeller.datastreamui.data.model.WorkoutResponse
 import eu.groeller.datastreamui.data.workout.WorkoutRepository
 import eu.groeller.datastreamui.screens.DashScreen
 import eu.groeller.datastreamui.screens.LoginScreen
 import eu.groeller.datastreamui.screens.WorkoutScreen
+import eu.groeller.datastreamui.screens.workout.SingleWorkoutView
 import eu.groeller.datastreamui.viewmodel.DashViewModel
 import eu.groeller.datastreamui.viewmodel.WorkoutViewModel
 import kotlinx.coroutines.launch
@@ -52,7 +57,14 @@ class MainActivity : ComponentActivity() {
                 composable<WorkoutRoute> { backStackEntry ->
                     val args = backStackEntry.toRoute<WorkoutRoute>()
                     val workoutRepository = WorkoutRepository(injectionHolder.httpConfig.v1HttpClient, User(args.username, "hihi", args.token))
-                    WorkoutScreen(WorkoutViewModel(workoutRepository))
+                    WorkoutScreen(WorkoutViewModel(workoutRepository)) { workout ->
+                        navController.currentBackStackEntry?.savedStateHandle?.set("workout", workout)
+                        navController.navigate(SingleWorkoutRoute)
+                    }
+                }
+                composable<SingleWorkoutRoute> { backStackEntry ->
+                    val workout = navController.previousBackStackEntry?.savedStateHandle?.get<WorkoutResponse>("workout")
+                    SingleWorkoutView(workout!!)
                 }
             }
         }
@@ -62,3 +74,4 @@ class MainActivity : ComponentActivity() {
 
 @Serializable object DashRoute
 @Serializable data class WorkoutRoute(val username: String, val token: String)
+@Serializable object SingleWorkoutRoute
