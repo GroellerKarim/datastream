@@ -5,28 +5,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.getValue
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 import eu.groeller.datastreamui.data.model.WorkoutResponse
 import eu.groeller.datastreamui.data.workout.WorkoutRepository
 import eu.groeller.datastreamui.screens.DashScreen
-import eu.groeller.datastreamui.screens.LoginScreen
 import eu.groeller.datastreamui.screens.WorkoutScreen
 import eu.groeller.datastreamui.screens.workout.SingleWorkoutView
 import eu.groeller.datastreamui.viewmodel.DashViewModel
 import eu.groeller.datastreamui.viewmodel.WorkoutViewModel
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 
@@ -39,9 +31,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         injectionHolder = InjectionManager(datastore)
-        lifecycleScope.launch {
-            token = injectionHolder.localDataSource.readToken()
-        }
 
         enableEdgeToEdge()
         setContent {
