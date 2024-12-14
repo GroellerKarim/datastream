@@ -1,7 +1,6 @@
 package eu.groeller.datastreamui.screens.workout
 
 import android.annotation.SuppressLint
-import android.widget.ListView
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,10 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.groeller.datastreamui.data.model.WorkoutResponse
-import eu.groeller.datastreamui.data.workout.WorkoutRepository
 import java.time.Duration
 import java.time.OffsetDateTime
-import java.util.concurrent.TimeUnit
 
 @Composable
 fun SingleWorkoutView(workout: WorkoutResponse) {
@@ -51,16 +47,21 @@ fun SingleWorkoutView(workout: WorkoutResponse) {
                 verticalArrangement = Arrangement.Center
             ){
                 Text("Duration:", fontSize = 16.sp)
-                Text(createDurationString(workout), fontSize = 16.sp)
+                Text(createDurationString(workout.durationMs), fontSize = 16.sp)
             }
         }
     }
 }
  @SuppressLint("DefaultLocale")
- fun createDurationString(workout: WorkoutResponse): String {
-    val duration = Duration.ofMillis(workout.durationMs)
+ fun createDurationString(ms: Long): String {
+    val duration = Duration.ofMillis(ms)
     val hours = duration.toHours()
     val minutes = duration.toMinutesPart() 
     val seconds = duration.toSecondsPart()
     return String.format("%02d:%02d:%02d", hours, minutes, seconds)
+}
+
+fun createDurationString(start: OffsetDateTime, end: OffsetDateTime): String {
+    val durationBetween = Duration.between(start, end)
+    return createDurationString(durationBetween.toMillis())
 }
