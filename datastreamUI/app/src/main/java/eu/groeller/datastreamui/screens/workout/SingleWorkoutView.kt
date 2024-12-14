@@ -1,8 +1,6 @@
 package eu.groeller.datastreamui.screens.workout
 
 import android.annotation.SuppressLint
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import eu.groeller.datastreamui.data.model.WorkoutResponse
@@ -26,13 +23,13 @@ import java.time.OffsetDateTime
 fun SingleWorkoutView(workout: WorkoutResponse) {
     Column(
         modifier = Modifier.fillMaxSize()
-            .padding(top = 25.dp, bottom = 25.dp)
+            .padding(top = 30.dp, bottom = 25.dp)
     ){
         Row(
             modifier = Modifier.fillMaxHeight(0.08f)
-                .border(BorderStroke(2.dp, Color.Black))
+                //.border(BorderStroke(2.dp, Color.Black))
                 .fillMaxWidth()
-                .padding(top = 20.dp, start = 20.dp),
+                .padding(top = 20.dp, start = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
@@ -42,13 +39,16 @@ fun SingleWorkoutView(workout: WorkoutResponse) {
                 Text("Back")
             }
             Column(
-                modifier = Modifier.padding(start = 5.dp)
-                    .border(BorderStroke(2.dp, Color.Black)),
+                modifier = Modifier.padding(start = 5.dp),
+                    //.border(BorderStroke(2.dp, Color.Black)),
                 verticalArrangement = Arrangement.Center
             ){
                 Text("Duration:", fontSize = 16.sp)
                 Text(createDurationString(workout.durationMs), fontSize = 16.sp)
             }
+        }
+        workout.exercises.forEach { exercise ->
+            SingleExerciseCard(exercise)
         }
     }
 }
