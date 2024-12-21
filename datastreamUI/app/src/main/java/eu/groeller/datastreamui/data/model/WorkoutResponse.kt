@@ -56,7 +56,7 @@ data class ExerciseSetResponse(
     @Serializable(with = OffsetDateTimeSerializer::class)
     val endTime: OffsetDateTime,
     val failure: Boolean,
-    val repetitions: Int
+    val repetitions: Int? = null
 ) : Parcelable
 
 @Parcelize
