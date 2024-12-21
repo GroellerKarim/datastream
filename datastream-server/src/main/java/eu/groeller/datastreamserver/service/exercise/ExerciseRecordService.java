@@ -43,7 +43,7 @@ public class ExerciseRecordService {
         DtoUtils.checkNulls(request, List.of("details"));
         val details = request.details();
 
-        DtoUtils.checkNulls(details, List.of("distance", "distanceUnit", "weightKg"));
+        DtoUtils.checkNulls(details, List.of("distance", "distanceUnit"));
 
         val record = new DistanceExerciseRecord();
         record.setExerciseDefinition(definition);
@@ -70,7 +70,7 @@ public class ExerciseRecordService {
     }
 
     private ExerciseSet createExerciseSet(@NonNull ExerciseSetRequest request) {
-        DtoUtils.checkAllNulls(request);
+        DtoUtils.checkNulls(request, List.of("startTime", "endTime", "failure", "order"));
 
         var set = new ExerciseSet();
         set.setStartTime(request.startTime());
