@@ -1,5 +1,11 @@
 package eu.groeller.datastreamui.screens.workout
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,22 +24,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import eu.groeller.datastreamui.data.model.ExerciseRecordResponse
 import eu.groeller.datastreamui.data.model.ExerciseSetResponse
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
+import eu.groeller.datastreamui.data.model.ExerciseType
 
 @Composable
 fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
     var isExpanded by remember { mutableStateOf(false) }
+    val isExpandable = exercise.type != ExerciseType.DISTANCE
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(4.dp)
-            .clickable { isExpanded = !isExpanded }
+            .then(if (isExpandable) {
+                Modifier.clickable { isExpanded = !isExpanded }
+            } else {
+                Modifier
+            })
     ) {
         Column {
             // Main row (always visible)
@@ -48,19 +54,21 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
                 Text(text = createDurationString(exercise.startTime, exercise.endTime))
             }
             
-            // Expandable content
-            AnimatedVisibility(
-                visible = isExpanded,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+            // Expandable content (only for non-DISTANCE exercises)
+            if (isExpandable) {
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
                 ) {
-                    exercise.details.sets?.forEachIndexed { index, set ->
-                        SetRow(setNumber = index + 1, set = set)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        exercise.details.sets?.forEachIndexed { index, set ->
+                            SetRow(setNumber = index + 1, set = set)
+                        }
                     }
                 }
             }
