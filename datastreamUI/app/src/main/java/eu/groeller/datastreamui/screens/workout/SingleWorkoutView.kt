@@ -78,9 +78,11 @@ fun SingleWorkoutView(
                 .background(Color.White)
                 .padding(8.dp)
         ) {
-            workout.exercises.forEach { exercise ->
-                SingleExerciseCard(exercise)
-            }
+            workout.exercises
+                .sortedBy { it.orderIndex }
+                .forEach { exercise ->
+                    SingleExerciseCard(exercise)
+                }
         }
     }
 }
