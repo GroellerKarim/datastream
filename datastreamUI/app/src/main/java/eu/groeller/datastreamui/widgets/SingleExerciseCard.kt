@@ -67,9 +67,10 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        SetTableHeader()
+                        val showWeight = exercise.details.sets?.any { it.weightKg != null } ?: false
+                        SetTableHeader(showWeight)
                         exercise.details.sets?.forEachIndexed { index, set ->
-                            SetRow(setNumber = index + 1, set = set)
+                            SetRow(setNumber = index + 1, set = set, showWeight = showWeight)
                         }
                     }
                 }
@@ -79,7 +80,7 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
 }
 
 @Composable
-private fun SetRow(setNumber: Int, set: ExerciseSetResponse) {
+private fun SetRow(setNumber: Int, set: ExerciseSetResponse, showWeight: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -87,41 +88,49 @@ private fun SetRow(setNumber: Int, set: ExerciseSetResponse) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Set Number Column (20%)
+        // Set Number Column (15%)
         Text(
             text = "Set $setNumber",
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(0.2f)
+            modifier = Modifier.weight(0.15f)
         )
         
-        // Reps/Time Column (30%)
+        // Weight Column (20%, if shown)
+        if (showWeight) {
+            Text(
+                text = set.weightKg?.let { "$it kg" } ?: "-",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(0.2f)
+            )
+        }
+        
+        // Reps/Time Column (30% or 35% if no weight)
         Text(
             text = if (set.repetitions != null) 
                    "${set.repetitions} reps" 
                    else createDurationString(set.startTime, set.endTime),
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(0.3f)
+            modifier = Modifier.weight(if (showWeight) 0.3f else 0.35f)
         )
         
-        // Rest Column (30%)
+        // Rest Column (25% or 30% if no weight)
         Text(
             text = if (setNumber > 1) createDurationString(set.startTime, set.endTime) else "-",
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(0.3f)
+            modifier = Modifier.weight(if (showWeight) 0.25f else 0.3f)
         )
         
-        // Failure Column (20%)
+        // Failure Column (10% or 20% if no weight)
         Text(
             text = if (set.failure) "🔴" else "-",
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(0.2f)
+            modifier = Modifier.weight(if (showWeight) 0.1f else 0.2f)
         )
     }
 }
 
-// Add a header row for the columns
 @Composable
-private fun SetTableHeader() {
+private fun SetTableHeader(showWeight: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -132,22 +141,33 @@ private fun SetTableHeader() {
         Text(
             text = "Set",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(0.2f)
+            modifier = Modifier.weight(0.15f)
         )
+        
+        if (showWeight) {
+            Text(
+                text = "Weight",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.weight(0.2f)
+            )
+        }
+        
         Text(
             text = "Reps/Time",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(0.3f)
+            modifier = Modifier.weight(if (showWeight) 0.3f else 0.35f)
         )
+        
         Text(
             text = "Rest",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(0.3f)
+            modifier = Modifier.weight(if (showWeight) 0.25f else 0.3f)
         )
+        
         Text(
             text = "Failure",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(0.2f)
+            modifier = Modifier.weight(if (showWeight) 0.1f else 0.2f)
         )
     }
 }
