@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import eu.groeller.datastreamui.data.model.ExerciseRecordResponse
 import eu.groeller.datastreamui.data.model.ExerciseSetResponse
@@ -66,6 +67,7 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
+                        SetTableHeader()
                         exercise.details.sets?.forEachIndexed { index, set ->
                             SetRow(setNumber = index + 1, set = set)
                         }
@@ -85,29 +87,68 @@ private fun SetRow(setNumber: Int, set: ExerciseSetResponse) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Set Number Column (20%)
         Text(
-            text = "Set $setNumber:",
-            style = MaterialTheme.typography.bodyMedium
+            text = "Set $setNumber",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(0.2f)
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "${set.repetitions} reps",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = createDurationString(set.startTime, set.endTime),
-                style = MaterialTheme.typography.bodyMedium
-            )
-            if (set.failure) {
-                Text(
-                    text = "🔴",  // Red circle emoji to indicate failure
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
+        
+        // Reps/Time Column (30%)
+        Text(
+            text = if (set.repetitions != null) 
+                   "${set.repetitions} reps" 
+                   else createDurationString(set.startTime, set.endTime),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(0.3f)
+        )
+        
+        // Rest Column (30%)
+        Text(
+            text = if (setNumber > 1) createDurationString(set.startTime, set.endTime) else "-",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(0.3f)
+        )
+        
+        // Failure Column (20%)
+        Text(
+            text = if (set.failure) "🔴" else "-",
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(0.2f)
+        )
+    }
+}
+
+// Add a header row for the columns
+@Composable
+private fun SetTableHeader() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Set",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.weight(0.2f)
+        )
+        Text(
+            text = "Reps/Time",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.weight(0.3f)
+        )
+        Text(
+            text = "Rest",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.weight(0.3f)
+        )
+        Text(
+            text = "Failure",
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+            modifier = Modifier.weight(0.2f)
+        )
     }
 }
 
