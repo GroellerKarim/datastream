@@ -3,7 +3,6 @@ package eu.groeller.datastreamui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.absolutePadding
@@ -15,8 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ShapeDefaults
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,17 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import eu.groeller.datastreamui.User
 import eu.groeller.datastreamui.data.model.WorkoutResponse
 import eu.groeller.datastreamui.data.workout.WorkoutState
 import eu.groeller.datastreamui.viewmodel.WorkoutViewModel
 import eu.groeller.datastreamui.widgets.DateBox
-import java.time.OffsetDateTime
 
 @Composable
 fun WorkoutScreen(

@@ -58,7 +58,14 @@ class MainActivity : ComponentActivity() {
                 }
                 composable<SingleWorkoutRoute> { backStackEntry ->
                     val workout = navController.previousBackStackEntry?.savedStateHandle?.get<WorkoutResponse>("workout")
-                    SingleWorkoutView(workout!!)
+                    if (workout != null) {
+                        SingleWorkoutView(
+                            workout = workout,
+                            onNavigateBack = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
                 }
             }
         }

@@ -24,7 +24,10 @@ import java.time.Duration
 import java.time.OffsetDateTime
 
 @Composable
-fun SingleWorkoutView(workout: WorkoutResponse) {
+fun SingleWorkoutView(
+    workout: WorkoutResponse,
+    onNavigateBack: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxSize()
             .padding(top = 30.dp, bottom = 25.dp)
@@ -50,7 +53,7 @@ fun SingleWorkoutView(workout: WorkoutResponse) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = { },
+                onClick = onNavigateBack,
                 modifier = Modifier.fillMaxWidth(0.3f)
             ) {
                 Text("Back")
