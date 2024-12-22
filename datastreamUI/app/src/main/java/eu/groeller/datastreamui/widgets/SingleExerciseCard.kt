@@ -1,5 +1,6 @@
 package eu.groeller.datastreamui.screens.workout
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -26,6 +27,16 @@ import androidx.compose.ui.unit.dp
 import eu.groeller.datastreamui.data.model.ExerciseRecordResponse
 import eu.groeller.datastreamui.data.model.ExerciseSetResponse
 import eu.groeller.datastreamui.data.model.ExerciseType
+import java.time.Duration
+import java.time.OffsetDateTime
+
+@SuppressLint("DefaultLocale")
+private fun createRestTimeString(start: OffsetDateTime, end: OffsetDateTime): String {
+    val duration = Duration.between(start, end)
+    val minutes = duration.toMinutes()
+    val seconds = duration.toSecondsPart()
+    return String.format("%02d:%02d", minutes, seconds)
+}
 
 @Composable
 fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
@@ -88,11 +99,11 @@ private fun SetRow(setNumber: Int, set: ExerciseSetResponse, showWeight: Boolean
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Set Number Column (15%)
+        // Set Number Column (12%)
         Text(
             text = "Set $setNumber",
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(0.15f)
+            modifier = Modifier.weight(0.12f)
         )
         
         // Weight Column (20%, if shown)
@@ -100,31 +111,31 @@ private fun SetRow(setNumber: Int, set: ExerciseSetResponse, showWeight: Boolean
             Text(
                 text = set.weightKg?.let { "$it kg" } ?: "-",
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(0.2f)
+                modifier = Modifier.weight(0.20f)
             )
         }
         
-        // Reps/Time Column (30% or 35% if no weight)
+        // Reps/Time Column (33% or 38% if no weight)
         Text(
             text = if (set.repetitions != null) 
                    "${set.repetitions} reps" 
                    else createDurationString(set.startTime, set.endTime),
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(if (showWeight) 0.3f else 0.35f)
+            modifier = Modifier.weight(if (showWeight) 0.33f else 0.38f)
         )
         
-        // Rest Column (25% or 30% if no weight)
+        // Rest Column (20% or 30% if no weight)
         Text(
-            text = if (setNumber > 1) createDurationString(set.startTime, set.endTime) else "-",
+            text = if (setNumber > 1) createRestTimeString(set.startTime, set.endTime) else "-",
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(if (showWeight) 0.25f else 0.3f)
+            modifier = Modifier.weight(if (showWeight) 0.20f else 0.30f)
         )
         
-        // Failure Column (10% or 20% if no weight)
+        // Failure Column (15% or 20% if no weight)
         Text(
             text = if (set.failure) "🔴" else "-",
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(if (showWeight) 0.1f else 0.2f)
+            modifier = Modifier.weight(if (showWeight) 0.15f else 0.20f)
         )
     }
 }
@@ -141,33 +152,33 @@ private fun SetTableHeader(showWeight: Boolean) {
         Text(
             text = "Set",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(0.15f)
+            modifier = Modifier.weight(0.12f)
         )
         
         if (showWeight) {
             Text(
                 text = "Weight",
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.weight(0.2f)
+                modifier = Modifier.weight(0.20f)
             )
         }
         
         Text(
             text = "Reps/Time",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(if (showWeight) 0.3f else 0.35f)
+            modifier = Modifier.weight(if (showWeight) 0.33f else 0.38f)
         )
         
         Text(
             text = "Rest",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(if (showWeight) 0.25f else 0.3f)
+            modifier = Modifier.weight(if (showWeight) 0.20f else 0.30f)
         )
         
         Text(
             text = "Failure",
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.weight(if (showWeight) 0.1f else 0.2f)
+            modifier = Modifier.weight(if (showWeight) 0.15f else 0.20f)
         )
     }
 }
