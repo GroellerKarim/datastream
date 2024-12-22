@@ -26,7 +26,9 @@ public class ExerciseSet extends AbstractEntity {
     private Long setDuration;
     
     private Boolean failure;
-    
+
+    @Column(name = "weight_kg")
+    private Double weightKg;
     // For SETS_REPS type
     private Integer repetitions;
 

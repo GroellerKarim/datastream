@@ -8,14 +8,16 @@ public record ExerciseSetResponse(
         OffsetDateTime startTime,
         OffsetDateTime endTime,
         Boolean failure,
-        Integer repetitions
+        Integer repetitions,
+        Double weightKg
 ) {
     public ExerciseSetResponse(ExerciseSet set) {
         this(
                 set.getStartTime(),
                 set.getEndTime(),
                 set.getFailure(),
-                set.getRepetitions()
+                set.getRepetitions(),
+                set.getWeightKg()
         );
     }
 }

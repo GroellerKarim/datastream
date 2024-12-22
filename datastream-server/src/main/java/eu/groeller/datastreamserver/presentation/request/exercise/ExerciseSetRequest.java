@@ -7,5 +7,6 @@ public record ExerciseSetRequest(
         OffsetDateTime endTime,
         Boolean failure,
         Integer repetitions,
+        Double weightKg,
         Integer order
 ) {}

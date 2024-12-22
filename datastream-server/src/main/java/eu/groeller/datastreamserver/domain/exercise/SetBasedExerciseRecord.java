@@ -17,7 +17,4 @@ public class SetBasedExerciseRecord extends ExerciseRecord {
     
     @Column(name = "average_rest_time")
     private Double averageRestTime;
-    
-    @Column(name = "weight_kg")
-    private Double weightKg;
 }

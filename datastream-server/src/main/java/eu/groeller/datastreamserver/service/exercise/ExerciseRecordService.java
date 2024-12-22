@@ -59,7 +59,6 @@ public class ExerciseRecordService {
         val details = request.details();
         val record = new SetBasedExerciseRecord();
         record.setExerciseDefinition(definition);
-        record.setWeightKg(details.weightKg());
 
         List<ExerciseSet> sets = details.sets().stream()
             .map(this::createExerciseSet)
@@ -77,6 +76,7 @@ public class ExerciseRecordService {
         set.setEndTime(request.endTime());
         set.setFailure(request.failure());
         set.setRepetitions(request.repetitions());
+        set.setWeightKg(request.weightKg());
         set.setOrderIndex(request.order());
         return set;
     }
