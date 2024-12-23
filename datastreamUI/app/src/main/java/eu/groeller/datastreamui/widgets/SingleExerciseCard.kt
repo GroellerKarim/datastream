@@ -62,7 +62,29 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = exercise.exerciseName)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = exercise.exerciseName)
+                    Text(
+                        text = when (exercise.type) {
+                            ExerciseType.DISTANCE -> {
+                                val distance = exercise.details.distance ?: 0.0
+                                val durationHours = Duration.between(
+                                    exercise.startTime,
+                                    exercise.endTime
+                                ).toMillis() / (1000.0 * 60 * 60)
+                                String.format("• %.1f km/h", distance / durationHours)
+                            }
+                            ExerciseType.SETS_REPS, ExerciseType.SETS_TIME -> {
+                                val setCount = exercise.details.sets?.size ?: 0
+                                "• $setCount sets"
+                            }
+                        },
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
                 Text(text = createDurationString(exercise.startTime, exercise.endTime))
             }
             
