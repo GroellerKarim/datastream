@@ -53,7 +53,7 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -115,7 +115,7 @@ private fun DistanceExerciseDetails(exercise: ExerciseRecordResponse) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp)
+            .padding(bottom = 8.dp, top = 0.dp)
     ) {
         // Header Row
         Row(
@@ -177,7 +177,7 @@ private fun SetRow(setNumber: Int, set: ExerciseSetResponse, showWeight: Boolean
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(bottom = 4.dp, top = 0.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
