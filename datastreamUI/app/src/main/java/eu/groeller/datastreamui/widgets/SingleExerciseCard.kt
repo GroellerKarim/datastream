@@ -41,17 +41,12 @@ private fun createRestTimeString(start: OffsetDateTime, end: OffsetDateTime): St
 @Composable
 fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
     var isExpanded by remember { mutableStateOf(false) }
-    val isExpandable = exercise.type != ExerciseType.DISTANCE
-
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(4.dp)
-            .then(if (isExpandable) {
-                Modifier.clickable { isExpanded = !isExpanded }
-            } else {
-                Modifier
-            })
+            .clickable { isExpanded = !isExpanded }
     ) {
         Column {
             // Main row (always visible)
@@ -71,11 +66,7 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
                         text = when (exercise.type) {
                             ExerciseType.DISTANCE -> {
                                 val distance = exercise.details.distance ?: 0.0
-                                val durationHours = Duration.between(
-                                    exercise.startTime,
-                                    exercise.endTime
-                                ).toMillis() / (1000.0 * 60 * 60)
-                                String.format("• %.1f km/h", distance / durationHours)
+                                String.format("• %.1f km", distance)
                             }
                             ExerciseType.SETS_REPS, ExerciseType.SETS_TIME -> {
                                 val setCount = exercise.details.sets?.size ?: 0
@@ -88,18 +79,20 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
                 Text(text = createDurationString(exercise.startTime, exercise.endTime))
             }
             
-            // Expandable content (only for non-DISTANCE exercises)
-            if (isExpandable) {
-                AnimatedVisibility(
-                    visible = isExpanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
+            // Expandable content
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
+                    if (exercise.type == ExerciseType.DISTANCE) {
+                        DistanceExerciseDetails(exercise)
+                    } else {
                         val showWeight = exercise.details.sets?.any { it.weightKg != null } ?: false
                         SetTableHeader(showWeight)
                         exercise.details.sets?.forEachIndexed { index, set ->
@@ -108,6 +101,73 @@ fun SingleExerciseCard(exercise: ExerciseRecordResponse) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DistanceExerciseDetails(exercise: ExerciseRecordResponse) {
+    val distance = exercise.details.distance ?: 0.0
+    val duration = Duration.between(exercise.startTime, exercise.endTime)
+    val durationHours = duration.toMillis() / (1000.0 * 60 * 60)
+    val timePerKm = duration.toMinutes() / distance // minutes per km
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        // Header Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Distance",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.weight(0.33f)
+            )
+            
+            Text(
+                text = "Pace",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.weight(0.33f)
+            )
+            
+            Text(
+                text = "Speed",
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.weight(0.33f)
+            )
+        }
+        
+        // Data Row
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = String.format("%.1f km", distance),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(0.33f)
+            )
+            
+            Text(
+                text = String.format("%d:%02d min/km", 
+                    timePerKm.toInt(),
+                    ((timePerKm % 1) * 60).toInt()
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(0.33f)
+            )
+            
+            Text(
+                text = String.format("%.1f km/h", distance / durationHours),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(0.33f)
+            )
         }
     }
 }
