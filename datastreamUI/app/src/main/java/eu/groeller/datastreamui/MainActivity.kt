@@ -9,6 +9,7 @@ import androidx.core.view.WindowCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -45,13 +46,19 @@ class MainActivity : ComponentActivity() {
                 startDestination = DashRoute
             ) {
                 composable<DashRoute> {
-                    DashScreen(DashViewModel(injectionHolder.userRepository),
+                    val viewModel = viewModel<DashViewModel> {
+                        DashViewModel(injectionHolder.userRepository)
+                    }
+                    DashScreen(viewModel,
                         onWorkoutButtonClicked = { user -> navController.navigate(WorkoutRoute(user.username, user.token)) } )
                 }
                 composable<WorkoutRoute> { backStackEntry ->
                     val args = backStackEntry.toRoute<WorkoutRoute>()
-                    val workoutRepository = WorkoutRepository(injectionHolder.httpConfig.v1HttpClient, User(args.username, "hihi", args.token))
-                    WorkoutScreen(WorkoutViewModel(workoutRepository)) { workout ->
+                    val viewModel = viewModel<WorkoutViewModel> {
+                        val workoutRepository = WorkoutRepository(injectionHolder.httpConfig.v1HttpClient, User(args.username, "hihi", args.token))
+                        WorkoutViewModel(workoutRepository)
+                    }
+                    WorkoutScreen(viewModel) { workout ->
                         navController.currentBackStackEntry?.savedStateHandle?.set("workout", workout)
                         navController.navigate(SingleWorkoutRoute)
                     }
