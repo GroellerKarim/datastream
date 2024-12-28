@@ -19,6 +19,7 @@ import eu.groeller.datastreamui.data.workout.WorkoutRepository
 import eu.groeller.datastreamui.screens.DashScreen
 import eu.groeller.datastreamui.screens.WorkoutScreen
 import eu.groeller.datastreamui.screens.workout.SingleWorkoutView
+import eu.groeller.datastreamui.screens.workout.WorkoutTrackingScreen
 import eu.groeller.datastreamui.viewmodel.DashViewModel
 import eu.groeller.datastreamui.viewmodel.WorkoutViewModel
 import kotlinx.serialization.Serializable
@@ -58,10 +59,16 @@ class MainActivity : ComponentActivity() {
                         val workoutRepository = WorkoutRepository(injectionHolder.httpConfig.v1HttpClient, User(args.username, "hihi", args.token))
                         WorkoutViewModel(workoutRepository)
                     }
-                    WorkoutScreen(viewModel) { workout ->
-                        navController.currentBackStackEntry?.savedStateHandle?.set("workout", workout)
-                        navController.navigate(SingleWorkoutRoute)
-                    }
+                    WorkoutScreen(
+                        viewModel = viewModel,
+                        viewRecentWorkout = { workout ->
+                            navController.currentBackStackEntry?.savedStateHandle?.set("workout", workout)
+                            navController.navigate(SingleWorkoutRoute)
+                        },
+                        onTrackWorkoutClicked = {
+                            navController.navigate(WorkoutTracking)
+                        }
+                    )
                 }
                 composable<SingleWorkoutRoute> { backStackEntry ->
                     val workout = navController.previousBackStackEntry?.savedStateHandle?.get<WorkoutResponse>("workout")
@@ -74,6 +81,15 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+                composable<WorkoutTracking> {
+                    WorkoutTrackingScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onWorkoutComplete = {
+                            // TODO: Handle workout completion
+                            navController.popBackStack()
+                        }
+                    )
+                }
             }
         }
     }
@@ -83,3 +99,4 @@ class MainActivity : ComponentActivity() {
 @Serializable object DashRoute
 @Serializable data class WorkoutRoute(val username: String, val token: String)
 @Serializable object SingleWorkoutRoute
+@Serializable object WorkoutTracking

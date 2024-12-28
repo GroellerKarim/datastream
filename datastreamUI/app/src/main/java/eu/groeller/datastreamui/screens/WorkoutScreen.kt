@@ -33,12 +33,13 @@ import eu.groeller.datastreamui.widgets.DateBox
 @Composable
 fun WorkoutScreen(
     viewModel: WorkoutViewModel = viewModel(),
-    viewRecentWorkout: (WorkoutResponse) -> Unit
+    viewRecentWorkout: (WorkoutResponse) -> Unit,
+    onTrackWorkoutClicked: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     when (val currentState = uiState) {
-        is WorkoutState.Success -> WorkoutScreen(currentState.workouts, viewRecentWorkout)
+        is WorkoutState.Success -> WorkoutScreen(currentState.workouts, viewRecentWorkout, onTrackWorkoutClicked)
         is WorkoutState.Error -> Text(currentState.error.message)
         is WorkoutState.Loading -> Text("Loading...")
     }
@@ -47,7 +48,8 @@ fun WorkoutScreen(
 @Composable
 fun WorkoutScreen(
     workouts: List<WorkoutResponse>,
-    viewRecentWorkout: (WorkoutResponse) -> Unit
+    viewRecentWorkout: (WorkoutResponse) -> Unit,
+    onTrackWorkoutClicked: () -> Unit
 ) {
     Column (
         modifier = Modifier.fillMaxSize(),
@@ -108,7 +110,7 @@ fun WorkoutScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Button(onClick = { }) {
+                Button(onClick = onTrackWorkoutClicked) {
                     Text("Track")
                 }
                 Button(onClick = { }) {
