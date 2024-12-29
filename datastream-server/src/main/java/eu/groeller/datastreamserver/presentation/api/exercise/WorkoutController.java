@@ -3,7 +3,9 @@ package eu.groeller.datastreamserver.presentation.api.exercise;
 import eu.groeller.datastreamserver.configuration.security.CustomUserDetails;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutRequest;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutTypeRequest;
+import eu.groeller.datastreamserver.presentation.response.exercise.ExerciseDefinitionResponse;
 import eu.groeller.datastreamserver.presentation.response.exercise.WorkoutResponse;
+import eu.groeller.datastreamserver.presentation.response.exercise.WorkoutTypeResponse;
 import eu.groeller.datastreamserver.service.exercise.WorkoutService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +19,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import java.util.stream.Collectors;
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -58,5 +63,40 @@ public class WorkoutController {
         log.debug("Workout IDs: {}", responses.stream().map(WorkoutResponse::workoutId).collect(Collectors.toSet()));
         
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/types")
+    public ResponseEntity<List<WorkoutTypeResponse>> getWorkoutTypes() {
+        log.info("Retrieving all workout types");
+        
+        val types = workoutService.getWorkoutTypes();
+        
+        log.info("Retrieved {} workout types", types.size());
+        log.trace("Workout types: {}", types);
+        
+        return ResponseEntity.ok(types.stream()
+            .map(WorkoutTypeResponse::new)
+            .collect(Collectors.toList()));
+    }
+
+    @GetMapping("/exercises/recent/{workoutTypeId}")
+    public ResponseEntity<List<ExerciseDefinitionResponse>> getRecentExercisesForType(
+        @AuthenticationPrincipal CustomUserDetails userDetails,
+        @PathVariable Long workoutTypeId,
+        @RequestParam(defaultValue = "5") int limit
+    ) {
+        log.info("Retrieving recent exercises for workout type: {} and user: {}", workoutTypeId, userDetails.getUsername());
+        
+        val exercises = workoutService.getRecentExercisesForType(
+            userDetails.getUser(),
+            workoutTypeId,
+            limit
+        );
+        
+        log.info("Retrieved {} recent exercises for workout type: {}", exercises.size(), workoutTypeId);
+        
+        return ResponseEntity.ok(exercises.stream()
+            .map(ExerciseDefinitionResponse::new)
+            .collect(Collectors.toList()));
     }
 }
