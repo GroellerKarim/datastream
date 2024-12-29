@@ -1,6 +1,7 @@
 package eu.groeller.datastreamserver.service.exercise;
 
 import eu.groeller.datastreamserver.domain.User;
+import eu.groeller.datastreamserver.domain.exercise.ExerciseDefinition;
 import eu.groeller.datastreamserver.domain.exercise.ExerciseRecord;
 import eu.groeller.datastreamserver.domain.exercise.Workout;
 import eu.groeller.datastreamserver.domain.exercise.WorkoutType;
@@ -24,6 +25,8 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.Comparator;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -35,6 +38,7 @@ public class WorkoutService {
     private final WorkoutRepository workoutRepository;
     private final WorkoutTypeRepository workoutTypeRepository;
     private final ExerciseRecordService exerciseRecordService;
+    private final ExerciseDefinitionService exerciseDefinitionService;
     private final Clock clock;
 
     @Transactional(readOnly = false)
@@ -75,5 +79,16 @@ public class WorkoutService {
 
         val createdWorkoutType = workoutTypeRepository.save(new WorkoutType(name));
         return createdWorkoutType;
+    }
+
+    public List<WorkoutType> getWorkoutTypes() {
+        return workoutTypeRepository.findAll();
+    }
+
+    public List<ExerciseDefinition> getRecentExercisesForType(User user, Long workoutTypeId, int limit) {
+        WorkoutType workoutType = workoutTypeRepository.findById(workoutTypeId)
+            .orElseThrow(() -> new NullPointerException("WorkoutType not found"));
+
+        return exerciseDefinitionService.getExerciseDefinitionForTypeAndUser(user, workoutType);
     }
 }
