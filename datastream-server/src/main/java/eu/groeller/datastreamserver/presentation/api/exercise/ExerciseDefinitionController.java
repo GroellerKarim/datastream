@@ -28,6 +28,18 @@ public class ExerciseDefinitionController {
         return ResponseEntity.ok(exerciseDefinitionService.createExerciseDefinition(request));
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<List<ExerciseDefinitionResponse>> getAll(@AuthenticationPrincipal CustomUserDetails details) {
+        log.info("Retrieving all exerciseDefinitiosn for {}", details);
+
+        val exDefs = exerciseDefinitionService.getAll();
+        log.trace("Retrieved {} exercise definitions", exDefs.size());
+
+        return ResponseEntity.ok(exDefs.stream()
+                .map(ExerciseDefinitionResponse::new)
+                .toList());
+    }
+
     @GetMapping("/recent/{workoutTypeId}")
     public ResponseEntity<List<ExerciseDefinitionResponse>> getRecentExercisesForType(
             @AuthenticationPrincipal CustomUserDetails userDetails,

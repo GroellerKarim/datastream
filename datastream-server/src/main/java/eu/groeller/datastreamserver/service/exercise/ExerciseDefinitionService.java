@@ -9,6 +9,7 @@ import eu.groeller.datastreamserver.persistence.exercise.ExerciseDefinitionRepos
 import eu.groeller.datastreamserver.service.utils.DtoUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ExerciseDefinitionService {
 
     private final ExerciseDefinitionRepository exerciseDefinitionRepository;
@@ -34,6 +36,9 @@ public class ExerciseDefinitionService {
         return exerciseDefinitionRepository.save(new ExerciseDefinition(request.name(), request.type()));
     }
 
+    public List<ExerciseDefinition> getAll() {
+        return exerciseDefinitionRepository.findAll();
+    }
 
     public List<ExerciseDefinition> getRecentExercisesForType(User user, Long workoutTypeId) {
         WorkoutType workoutType = workoutTypeRepository.findById(workoutTypeId)
