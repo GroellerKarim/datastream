@@ -15,7 +15,7 @@ class ExerciseRepository(
     private val user: User
 ) {
     suspend fun getAllExercises(): List<ExerciseDefinition> {
-        val response = httpClient.get("${V1_PATH}/workouts/exercises") {
+        val response = httpClient.get("${V1_PATH}/exercises/all") {
             bearerAuth(user.token)
         }
 
