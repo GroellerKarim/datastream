@@ -152,8 +152,11 @@ fun WorkoutTrackingScreen(
         CancelWorkoutDialog(
             onDismiss = { showCancelConfirmation = false },
             onConfirm = {
-                viewModel.resetWorkout()
-                onNavigateBack()
+                if(showCancelConfirmation) {
+                    showCancelConfirmation = false
+                    viewModel.resetWorkout()
+                    onNavigateBack()
+                }
             }
         )
     }
