@@ -84,11 +84,4 @@ public class WorkoutService {
     public List<WorkoutType> getWorkoutTypes() {
         return workoutTypeRepository.findAll();
     }
-
-    public List<ExerciseDefinition> getRecentExercisesForType(User user, Long workoutTypeId, int limit) {
-        WorkoutType workoutType = workoutTypeRepository.findById(workoutTypeId)
-            .orElseThrow(() -> new NullPointerException("WorkoutType not found"));
-
-        return exerciseDefinitionService.getExerciseDefinitionForTypeAndUser(user, workoutType);
-    }
 }

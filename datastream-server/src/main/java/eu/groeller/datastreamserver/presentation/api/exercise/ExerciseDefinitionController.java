@@ -1,17 +1,23 @@
 package eu.groeller.datastreamserver.presentation.api.exercise;
 
+import eu.groeller.datastreamserver.configuration.security.CustomUserDetails;
 import eu.groeller.datastreamserver.domain.exercise.ExerciseDefinition;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateExerciseDefinitionRequest;
+import eu.groeller.datastreamserver.presentation.response.exercise.ExerciseDefinitionResponse;
 import eu.groeller.datastreamserver.service.exercise.ExerciseDefinitionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Slf4j
 @RestController
-@RequestMapping("/api/v1/exercise")
+@RequestMapping("/api/v1/exercises")
 @RequiredArgsConstructor
 public class ExerciseDefinitionController {
 
@@ -20,5 +26,25 @@ public class ExerciseDefinitionController {
     @PostMapping("/create")
     public ResponseEntity<ExerciseDefinition> createExerciseDefinition(@RequestBody CreateExerciseDefinitionRequest request) {
         return ResponseEntity.ok(exerciseDefinitionService.createExerciseDefinition(request));
+    }
+
+    @GetMapping("/recent/{workoutTypeId}")
+    public ResponseEntity<List<ExerciseDefinitionResponse>> getRecentExercisesForType(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long workoutTypeId
+    ) {
+        log.info("Retrieving recent exercises for workout type: {} and user: {}", workoutTypeId, userDetails.getUsername());
+
+        val exercises = exerciseDefinitionService.getRecentExercisesForType(
+                userDetails.getUser(),
+                workoutTypeId
+        );
+
+        log.info("Retrieved {} recent exercises for workout type: {}", exercises.size(), workoutTypeId);
+        log.trace("Exercises [{}] for workout type: {}", exercises, workoutTypeId);
+
+        return ResponseEntity.ok(exercises.stream()
+                .map(ExerciseDefinitionResponse::new)
+                .collect(Collectors.toList()));
     }
 }

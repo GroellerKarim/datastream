@@ -79,24 +79,4 @@ public class WorkoutController {
             .collect(Collectors.toList()));
     }
 
-    @GetMapping("/exercises/recent/{workoutTypeId}")
-    public ResponseEntity<List<ExerciseDefinitionResponse>> getRecentExercisesForType(
-        @AuthenticationPrincipal CustomUserDetails userDetails,
-        @PathVariable Long workoutTypeId,
-        @RequestParam(defaultValue = "5") int limit
-    ) {
-        log.info("Retrieving recent exercises for workout type: {} and user: {}", workoutTypeId, userDetails.getUsername());
-        
-        val exercises = workoutService.getRecentExercisesForType(
-            userDetails.getUser(),
-            workoutTypeId,
-            limit
-        );
-        
-        log.info("Retrieved {} recent exercises for workout type: {}", exercises.size(), workoutTypeId);
-        
-        return ResponseEntity.ok(exercises.stream()
-            .map(ExerciseDefinitionResponse::new)
-            .collect(Collectors.toList()));
-    }
 }

@@ -3,6 +3,7 @@ package eu.groeller.datastreamserver.service.exercise;
 import eu.groeller.datastreamserver.domain.User;
 import eu.groeller.datastreamserver.domain.exercise.ExerciseDefinition;
 import eu.groeller.datastreamserver.domain.exercise.WorkoutType;
+import eu.groeller.datastreamserver.persistence.exercise.WorkoutTypeRepository;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateExerciseDefinitionRequest;
 import eu.groeller.datastreamserver.persistence.exercise.ExerciseDefinitionRepository;
 import eu.groeller.datastreamserver.service.utils.DtoUtils;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 public class ExerciseDefinitionService {
 
     private final ExerciseDefinitionRepository exerciseDefinitionRepository;
+    private final WorkoutTypeRepository workoutTypeRepository;
 
     @Transactional
     public ExerciseDefinition createExerciseDefinition(@NonNull CreateExerciseDefinitionRequest request) {
@@ -32,11 +34,14 @@ public class ExerciseDefinitionService {
         return exerciseDefinitionRepository.save(new ExerciseDefinition(request.name(), request.type()));
     }
 
-    public List<ExerciseDefinition> getExerciseDefinitionForTypeAndUser(User user, WorkoutType workoutType) {
+
+    public List<ExerciseDefinition> getRecentExercisesForType(User user, Long workoutTypeId) {
+        WorkoutType workoutType = workoutTypeRepository.findById(workoutTypeId)
+                .orElseThrow(() -> new NullPointerException("WorkoutType not found"));
+
         return exerciseDefinitionRepository.findRecentExercisesForTypeAndUser(user, workoutType)
                 .stream()
                 .sorted(Comparator.comparing(ExerciseDefinition::getName))
                 .collect(Collectors.toList());
     }
-
 }
