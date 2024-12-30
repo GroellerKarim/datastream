@@ -15,7 +15,7 @@ class ExerciseRepository(
     private val user: User
 ) {
     suspend fun getAllExercises(): List<ExerciseDefinition> {
-        val response = httpClient.get("${V1_PATH}/exercises") {
+        val response = httpClient.get("${V1_PATH}/workouts/exercises") {
             bearerAuth(user.token)
         }
 
@@ -39,7 +39,7 @@ class ExerciseRepository(
     }
 
     suspend fun getRecentExercisesForType(workoutType: WorkoutType, limit: Int = 5): List<ExerciseDefinition> {
-        val response = httpClient.get("${V1_PATH}/exercises/recent/${workoutType.id}") {
+        val response = httpClient.get("${V1_PATH}/workouts/exercises/recent/${workoutType.id}") {
             url {
                 parameters.append("limit", limit.toString())
             }
