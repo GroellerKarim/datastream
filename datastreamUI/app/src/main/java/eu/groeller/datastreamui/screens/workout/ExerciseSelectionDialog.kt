@@ -1,18 +1,19 @@
 package eu.groeller.datastreamui.screens.workout
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -23,9 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import eu.groeller.datastreamui.data.model.ExerciseDefinition
 import eu.groeller.datastreamui.data.model.ExerciseType
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExerciseSelectionDialog(
     onDismiss: () -> Unit,
@@ -41,29 +44,38 @@ fun ExerciseSelectionDialog(
         title = { Text("Select Exercise") },
         text = {
             Column {
-                // Exercise Type Filter
-                Row(
+                // Exercise Type Filter using Segmented Buttons
+                SingleChoiceSegmentedButtonRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .padding(start = 0.dp, end = 0.dp, bottom = 12.dp)
                 ) {
-                    ExerciseType.values().forEach { type ->
-                        FilterChip(
+                    ExerciseType.entries.forEachIndexed { index, type ->
+                        SegmentedButton(
                             selected = selectedType == type,
-                            onClick = {
-                                selectedType = if (selectedType == type) null else type
+                            onClick = { 
+                                selectedType = if (selectedType == type) null else type 
                             },
-                            label = { 
-                                Text(
-                                    when(type) {
-                                        ExerciseType.SETS_REPS -> "Sets & Reps"
-                                        ExerciseType.SETS_TIME -> "Sets & Time"
-                                        ExerciseType.DISTANCE -> "Distance"
-                                    }
-                                )
-                            }
-                        )
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = ExerciseType.entries.size
+                            ),
+                            icon = { },
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
+                            )
+                        ) {
+                            Text(
+                                when(type) {
+                                    ExerciseType.SETS_REPS -> "Sets & Reps"
+                                    ExerciseType.SETS_TIME -> "Sets & Time"
+                                    ExerciseType.DISTANCE -> "Distance"
+                                },
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
                     }
                 }
 
