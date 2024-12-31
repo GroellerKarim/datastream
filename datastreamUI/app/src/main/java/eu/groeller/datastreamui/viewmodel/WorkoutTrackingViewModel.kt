@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.groeller.datastreamui.data.exercise.ExerciseRepository
 import eu.groeller.datastreamui.data.model.ExerciseDefinition
-import eu.groeller.datastreamui.data.model.ExerciseRecordResponse
 import eu.groeller.datastreamui.data.model.WorkoutType
+import eu.groeller.datastreamui.screens.workout.SetData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,12 +15,13 @@ import java.time.OffsetDateTime
 
 data class WorkoutTrackingState(
     val startTime: OffsetDateTime = OffsetDateTime.now(),
-    val exercises: List<ExerciseRecordResponse> = emptyList(),
+    val exercises: List<ExerciseRecordRequest> = emptyList(),
     val recentExercises: List<ExerciseDefinition> = emptyList(),
     val allExercises: List<ExerciseDefinition> = emptyList(),
     val workoutTypes: List<WorkoutType> = emptyList(),
     val selectedWorkoutType: WorkoutType? = null,
     val currentExercise: ExerciseDefinition? = null,
+    val currentExerciseSets: List<SetData> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -92,7 +93,7 @@ class WorkoutTrackingViewModel(
     }
 
     // Add completed exercise to the workout
-    fun addExerciseRecord(exercise: ExerciseRecordResponse) {
+    fun addExerciseRecord(exercise: ExerciseRecordRequest) {
         _uiState.update { currentState ->
             currentState.copy(
                 exercises = currentState.exercises + exercise,
@@ -114,4 +115,47 @@ class WorkoutTrackingViewModel(
     fun resetWorkout() {
         _uiState.value = WorkoutTrackingState()
     }
-} 
+
+    fun recordSet(setData: SetData) {
+        _uiState.update { currentState ->
+            currentState.copy(
+                currentExerciseSets = currentState.currentExerciseSets + setData
+            )
+        }
+    }
+
+    fun completeCurrentExercise() {
+        val currentExercise = _uiState.value.currentExercise
+        val sets = _uiState.value.currentExerciseSets
+
+        if (currentExercise != null && sets.isNotEmpty()) {
+            val exerciseRecord = ExerciseRecordRequest(
+                exerciseDefinitionId = currentExercise.id,
+                startTime = _uiState.value.startTime,
+                endTime = OffsetDateTime.now(),
+                details = ExerciseRecordDetailsRequest(sets),
+                order = _uiState.value.exercises.size + 1
+            )
+
+            _uiState.update { currentState ->
+                currentState.copy(
+                    exercises = currentState.exercises + exerciseRecord,
+                    currentExercise = null,
+                    currentExerciseSets = emptyList()
+                )
+            }
+        }
+    }
+}
+
+data class ExerciseRecordRequest(
+    val exerciseDefinitionId: Long,
+    val startTime: OffsetDateTime,
+    val endTime: OffsetDateTime,
+    val details: ExerciseRecordDetailsRequest,
+    val order: Int
+)
+
+data class ExerciseRecordDetailsRequest(
+    val sets: List<SetData>
+)
