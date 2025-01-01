@@ -6,6 +6,7 @@ import WorkoutTrackingViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,7 +16,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,15 +68,34 @@ fun WorkoutTrackingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 28.dp, bottom = 8.dp)
     ) {
         // Header with duration and controls
+
+        // List of completed exercises
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f)
+        ) {
+            Text(
+                text = "Completed Exercises",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            LazyColumn {
+                items(uiState.exercises) { exerciseRecord ->
+                    CompletedExerciseItem(exerciseRecord)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                }
+            }
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Bottom
         ) {
             // Cancel button
             Button(
@@ -84,7 +104,7 @@ fun WorkoutTrackingScreen(
             ) {
                 Text("Cancel")
             }
-            
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -99,7 +119,7 @@ fun WorkoutTrackingScreen(
                     fontSize = 24.sp
                 )
             }
-            
+
             // Complete workout button
             Button(
                 onClick = onWorkoutComplete,
@@ -132,20 +152,6 @@ fun WorkoutTrackingScreen(
             Text("Add Exercise")
         }
 
-        // List of completed exercises
-        if (uiState.exercises.isNotEmpty()) {
-            Text(
-                text = "Completed Exercises",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            LazyColumn {
-                items(uiState.exercises) { exerciseRecord ->
-                    CompletedExerciseItem(exerciseRecord)
-                    Divider(modifier = Modifier.padding(vertical = 4.dp))
-                }
-            }
-        }
     }
 
     // Exercise Selection Dialog
