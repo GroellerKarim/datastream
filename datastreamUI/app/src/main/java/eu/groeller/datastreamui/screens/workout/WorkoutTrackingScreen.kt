@@ -4,6 +4,7 @@ import ExerciseRecordRequest
 import ExerciseTrackingDialog
 import WorkoutTrackingViewModel
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -274,21 +275,33 @@ private fun CompletedExerciseItem(exercise: ExerciseRecordRequest) {
                         .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "Set ${index + 1}:",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(
-                        text = "${set.weight}kg × ${set.reps}",
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    if (set.isFailure) {
+                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.TopStart) {
                         Text(
-                            text = "Failed",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
+                            text = "Set ${index + 1}:",
+                            style = MaterialTheme.typography.bodySmall
                         )
+                    }
+                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "${set.weight}kg × ${set.reps}",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                    }
+                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                        if (set.isFailure) {
+                            Text(
+                                text = "Failed",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        else {
+                            Text(
+                                text = "-",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
                     }
                 }
             }
