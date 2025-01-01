@@ -1,5 +1,6 @@
 package eu.groeller.datastreamui
 
+import WorkoutTrackingViewModel
 import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -22,7 +23,6 @@ import eu.groeller.datastreamui.screens.WorkoutScreen
 import eu.groeller.datastreamui.screens.workout.SingleWorkoutView
 import eu.groeller.datastreamui.screens.workout.WorkoutTrackingScreen
 import eu.groeller.datastreamui.viewmodel.DashViewModel
-import eu.groeller.datastreamui.viewmodel.WorkoutTrackingViewModel
 import eu.groeller.datastreamui.viewmodel.WorkoutViewModel
 import kotlinx.serialization.Serializable
 

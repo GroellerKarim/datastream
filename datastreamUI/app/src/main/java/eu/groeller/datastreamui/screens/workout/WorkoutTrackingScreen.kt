@@ -1,42 +1,35 @@
 package eu.groeller.datastreamui.screens.workout
 
+import ExerciseRecordRequest
+import ExerciseTrackingDialog
+import WorkoutTrackingViewModel
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import eu.groeller.datastreamui.data.model.ExerciseDefinition
-import eu.groeller.datastreamui.viewmodel.WorkoutTrackingViewModel
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Divider
-import eu.groeller.datastreamui.viewmodel.ExerciseRecordRequest
 
 @Composable
 fun WorkoutTrackingScreen(
@@ -118,13 +111,13 @@ fun WorkoutTrackingScreen(
 
         // Current exercise display
         uiState.currentExercise?.let { exercise ->
-            CurrentExerciseSection(
+            ExerciseTrackingDialog(
                 exercise = exercise,
-                onSetCompleted = { setData ->
-                    viewModel.recordSet(setData)
+                onDismiss = {
+                    viewModel.deselectExcercise()
                 },
-                onExerciseCompleted = {
-                    viewModel.completeCurrentExercise()
+                onExerciseCompleted = { sets ->
+                    viewModel.recordExercise(sets)
                 }
             )
         }
@@ -181,6 +174,17 @@ fun WorkoutTrackingScreen(
             }
         )
     }
+
+    // Show exercise tracking dialog when there's a current exercise
+    uiState.currentExercise?.let { exercise ->
+        ExerciseTrackingDialog(
+            exercise = exercise,
+            onDismiss = { viewModel.selectExercise(null) },
+            onExerciseCompleted = { sets ->
+                viewModel.recordExercise(sets)
+            }
+        )
+    }
 }
 
 @Composable
@@ -206,145 +210,6 @@ private fun CancelWorkoutDialog(
             }
         }
     )
-}
-
-@Composable
-fun CurrentExerciseSection(
-    exercise: ExerciseDefinition,
-    onSetCompleted: (SetData) -> Unit,
-    onExerciseCompleted: () -> Unit
-) {
-    var weight by remember { mutableStateOf("") }
-    var reps by remember { mutableStateOf("") }
-    var isFailure by remember { mutableStateOf(false) }
-    var completedSets by remember { mutableStateOf<List<SetData>>(emptyList()) }
-    
-    // Rest timer state
-    val lastSetTime = remember { mutableStateOf<Long?>(null) }
-    val restTime by derivedStateOf {
-        lastSetTime.value?.let { lastTime ->
-            (System.currentTimeMillis() - lastTime) / 1000
-        }
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            // Add Complete Exercise button at the top
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = onExerciseCompleted,
-                    enabled = completedSets.isNotEmpty()  // Use local state instead
-                ) {
-                    Text("Complete Exercise")
-                }
-            }
-
-            Text(
-                text = exercise.name,
-                style = MaterialTheme.typography.titleLarge
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // Rest timer display
-            restTime?.let { time ->
-                Text(
-                    text = "Rest time: ${createDurationString(time)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Set input section
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = weight,
-                    onValueChange = { weight = it },
-                    label = { Text("Weight") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-                
-                OutlinedTextField(
-                    value = reps,
-                    onValueChange = { reps = it },
-                    label = { Text("Reps") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                )
-            }
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Failed Set")
-                    Switch(
-                        checked = isFailure,
-                        onCheckedChange = { isFailure = it }
-                    )
-                }
-                
-                Button(
-                    onClick = {
-                        weight.toFloatOrNull()?.let { w ->
-                            reps.toIntOrNull()?.let { r ->
-                                val setData = SetData(w, r, isFailure)
-                                completedSets = completedSets + setData  // Update local state
-                                onSetCompleted(setData)  // Notify parent
-                                lastSetTime.value = System.currentTimeMillis()
-                                weight = ""
-                                reps = ""
-                                isFailure = false
-                            }
-                        }
-                    },
-                    enabled = weight.isNotBlank() && reps.isNotBlank()
-                ) {
-                    Text("Complete Set")
-                }
-            }
-
-            // Add Complete Exercise button at the top
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = onExerciseCompleted,
-                    enabled = completedSets.isNotEmpty()  // Only enable if there are sets
-                ) {
-                    Text("Complete Exercise")
-                }
-            }
-        }
-    }
 }
 
 // Data class for set information
@@ -375,7 +240,7 @@ private fun CompletedExerciseItem(exercise: ExerciseRecordRequest) {
             ) {
                 Text(
                     // We'll need to get the exercise name from somewhere
-                    text = "Exercise ${exercise.order}",  
+                    text = exercise.name,
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(

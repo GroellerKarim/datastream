@@ -1,5 +1,3 @@
-package eu.groeller.datastreamui.viewmodel
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.groeller.datastreamui.data.exercise.ExerciseRepository
@@ -21,7 +19,6 @@ data class WorkoutTrackingState(
     val workoutTypes: List<WorkoutType> = emptyList(),
     val selectedWorkoutType: WorkoutType? = null,
     val currentExercise: ExerciseDefinition? = null,
-    val currentExerciseSets: List<SetData> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -86,9 +83,15 @@ class WorkoutTrackingViewModel(
     }
 
     // Exercise Selection
-    fun selectExercise(exercise: ExerciseDefinition) {
+    fun selectExercise(exercise: ExerciseDefinition?) {
         _uiState.update { currentState ->
             currentState.copy(currentExercise = exercise)
+        }
+    }
+
+    fun deselectExcercise() {
+        _uiState.update { currentState ->
+            currentState.copy(currentExercise = null)
         }
     }
 
@@ -116,20 +119,12 @@ class WorkoutTrackingViewModel(
         _uiState.value = WorkoutTrackingState()
     }
 
-    fun recordSet(setData: SetData) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                currentExerciseSets = currentState.currentExerciseSets + setData
-            )
-        }
-    }
-
-    fun completeCurrentExercise() {
+    fun recordExercise(sets: List<SetData>) {
         val currentExercise = _uiState.value.currentExercise
-        val sets = _uiState.value.currentExerciseSets
 
         if (currentExercise != null && sets.isNotEmpty()) {
             val exerciseRecord = ExerciseRecordRequest(
+                name = currentExercise.name,
                 exerciseDefinitionId = currentExercise.id,
                 startTime = _uiState.value.startTime,
                 endTime = OffsetDateTime.now(),
@@ -139,9 +134,8 @@ class WorkoutTrackingViewModel(
 
             _uiState.update { currentState ->
                 currentState.copy(
-                    exercises = currentState.exercises + exerciseRecord,
+                    exercises = currentState.exercises.plus(exerciseRecord),
                     currentExercise = null,
-                    currentExerciseSets = emptyList()
                 )
             }
         }
@@ -149,6 +143,7 @@ class WorkoutTrackingViewModel(
 }
 
 data class ExerciseRecordRequest(
+    val name: String,
     val exerciseDefinitionId: Long,
     val startTime: OffsetDateTime,
     val endTime: OffsetDateTime,
