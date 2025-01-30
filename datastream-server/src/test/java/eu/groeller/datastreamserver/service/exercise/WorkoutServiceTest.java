@@ -16,12 +16,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -35,6 +35,9 @@ public class WorkoutServiceTest {
     private ExerciseRecordService exerciseRecordService;
 
     @Mock
+    private ExerciseDefinitionService exerciseDefinitionService;
+
+    @Mock
     private WorkoutTypeRepository workoutTypeRepository;
 
     @Mock
@@ -46,7 +49,7 @@ public class WorkoutServiceTest {
 
     @BeforeEach
     void setUp() {
-        workoutService = new WorkoutService(workoutRepository, workoutTypeRepository, exerciseRecordService, clock);
+        workoutService = new WorkoutService(workoutRepository, workoutTypeRepository, exerciseRecordService, exerciseDefinitionService, clock);
         testUser = new User("testuser", "test@example.com", "password");
     }
 
