@@ -3,6 +3,7 @@ package eu.groeller.datastreamserver.service.exercise;
 import eu.groeller.datastreamserver.domain.exercise.ExerciseDefinition;
 import eu.groeller.datastreamserver.domain.exercise.ExerciseType;
 import eu.groeller.datastreamserver.persistence.exercise.ExerciseDefinitionRepository;
+import eu.groeller.datastreamserver.persistence.exercise.WorkoutTypeRepository;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateExerciseDefinitionRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,11 +22,14 @@ public class ExerciseDefinitionServiceTest {
     @Mock
     private ExerciseDefinitionRepository exerciseDefinitionRepository;
 
+    @Mock
+    private WorkoutTypeRepository workoutTypeRepository;
+
     private ExerciseDefinitionService exerciseDefinitionService;
 
     @BeforeEach
     void setUp() {
-        exerciseDefinitionService = new ExerciseDefinitionService(exerciseDefinitionRepository);
+        exerciseDefinitionService = new ExerciseDefinitionService(exerciseDefinitionRepository, workoutTypeRepository);
     }
 
     @Test
