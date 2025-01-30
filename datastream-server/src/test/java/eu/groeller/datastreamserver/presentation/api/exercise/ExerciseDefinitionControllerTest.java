@@ -59,7 +59,7 @@ class ExerciseDefinitionControllerTest {
         ExerciseDefinition expectedResponse = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
         when(exerciseDefinitionService.createExerciseDefinition(any())).thenReturn(expectedResponse);
 
-        mockMvc.perform(post("/api/v1/exercise/create")
+        mockMvc.perform(post("/api/v1/exercises/create")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
