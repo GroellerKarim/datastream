@@ -88,7 +88,7 @@ public class ExerciseRecordServiceTest {
         // Arrange
         ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
         List<ExerciseSetRequest> setRequests = List.of(
-            new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, 1.0, 0)
+            new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, 50.0, 0)
         );
         
         val details = new ExerciseRecordDetailsRequest(
@@ -109,7 +109,7 @@ public class ExerciseRecordServiceTest {
         // Assert
         assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
         SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
-        assertThat(setRecord.getSets().getFirst()).isEqualTo(75.0);
+        assertThat(setRecord.getSets().getFirst().getWeightKg()).isEqualTo(50.0);
         assertThat(setRecord.getSets()).hasSize(1);
         assertThat(setRecord.getSets().getFirst().getRepetitions()).isEqualTo(12);
     }
