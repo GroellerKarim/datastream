@@ -1,7 +1,6 @@
 package eu.groeller.datastreamserver.presentation.api.exercise;
 
 import eu.groeller.datastreamserver.configuration.security.CustomUserDetails;
-import eu.groeller.datastreamserver.domain.exercise.ExerciseDefinition;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateExerciseDefinitionRequest;
 import eu.groeller.datastreamserver.presentation.response.exercise.ExerciseDefinitionResponse;
 import eu.groeller.datastreamserver.service.exercise.ExerciseDefinitionService;
@@ -24,8 +23,8 @@ public class ExerciseDefinitionController {
     private final ExerciseDefinitionService exerciseDefinitionService;
 
     @PostMapping("/create")
-    public ResponseEntity<ExerciseDefinition> createExerciseDefinition(@RequestBody CreateExerciseDefinitionRequest request) {
-        return ResponseEntity.ok(exerciseDefinitionService.createExerciseDefinition(request));
+    public ResponseEntity<ExerciseDefinitionResponse> createExerciseDefinition(@RequestBody CreateExerciseDefinitionRequest request) {
+        return ResponseEntity.ok(new ExerciseDefinitionResponse(exerciseDefinitionService.createExerciseDefinition(request)));
     }
 
     @GetMapping("/all")
