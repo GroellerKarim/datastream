@@ -41,9 +41,9 @@ fun WorkoutTrackingScreen(
 ) {
     var showExerciseSelection by remember { mutableStateOf(false) }
     var showCancelConfirmation by remember { mutableStateOf(false) }
-    
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    
+
     // Show workout type selection immediately if no type is selected
     if (uiState.selectedWorkoutType == null) {
         WorkoutTypeSelectionDialog(
@@ -63,7 +63,7 @@ fun WorkoutTrackingScreen(
     // Effect to update duration periodically
     var workoutDuration by remember { mutableStateOf(0L) }
     LaunchedEffect(Unit) {
-        while(true) {
+        while (true) {
             workoutDuration = viewModel.getWorkoutDuration()
             kotlinx.coroutines.delay(1000) // Update every second
         }
@@ -133,19 +133,6 @@ fun WorkoutTrackingScreen(
             }
         }
 
-        // Current exercise display
-        uiState.currentExercise?.let { exercise ->
-            ExerciseTrackingDialog(
-                exercise = exercise,
-                onDismiss = {
-                    viewModel.deselectExcercise()
-                },
-                onExerciseCompleted = { sets ->
-                    viewModel.recordExercise(sets)
-                }
-            )
-        }
-
         // Add Exercise Button
         Button(
             onClick = { showExerciseSelection = true },
@@ -167,7 +154,7 @@ fun WorkoutTrackingScreen(
                 showExerciseSelection = false
             },
             recentExercises = uiState.recentExercises,
-            onAddExercise =  { name, type -> viewModel.addExerciseDefinition(name, type)},
+            onAddExercise = { name, type -> viewModel.addExerciseDefinition(name, type) },
             allExercises = uiState.allExercises
         )
     }
@@ -177,7 +164,7 @@ fun WorkoutTrackingScreen(
         CancelWorkoutDialog(
             onDismiss = { showCancelConfirmation = false },
             onConfirm = {
-                if(showCancelConfirmation) {
+                if (showCancelConfirmation) {
                     showCancelConfirmation = false
                     viewModel.resetWorkout()
                     onNavigateBack()
@@ -190,6 +177,7 @@ fun WorkoutTrackingScreen(
     uiState.currentExercise?.let { exercise ->
         ExerciseTrackingDialog(
             exercise = exercise,
+            previousSetTime = uiState.exercises.lastOrNull()?.endTime?.toInstant()?.toEpochMilli(),
             onDismiss = { viewModel.selectExercise(null) },
             onExerciseCompleted = { sets ->
                 viewModel.recordExercise(sets)
@@ -229,7 +217,7 @@ data class SetData(
     val reps: Int,
     val isFailure: Boolean,
     val timestamp: Long = System.currentTimeMillis()
-) 
+)
 
 @Composable
 private fun CompletedExerciseItem(exercise: ExerciseRecordRequest) {
@@ -256,8 +244,8 @@ private fun CompletedExerciseItem(exercise: ExerciseRecordRequest) {
                 )
                 Text(
                     text = createDurationString(
-                        (exercise.endTime.toInstant().toEpochMilli() - 
-                         exercise.startTime.toInstant().toEpochMilli()) / 1000
+                        (exercise.endTime.toInstant().toEpochMilli() -
+                                exercise.startTime.toInstant().toEpochMilli()) / 1000
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -279,28 +267,42 @@ private fun CompletedExerciseItem(exercise: ExerciseRecordRequest) {
                         .padding(top = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.TopStart) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.TopStart
+                    ) {
                         Text(
                             text = "Set ${index + 1}:",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
-                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = "${set.weight}kg × ${set.reps}",
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
                     }
-                    Box(modifier = Modifier.fillMaxSize().weight(1f), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
                         if (set.isFailure) {
                             Text(
                                 text = "Failed",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error
                             )
-                        }
-                        else {
+                        } else {
                             Text(
                                 text = "-",
                                 style = MaterialTheme.typography.bodySmall,

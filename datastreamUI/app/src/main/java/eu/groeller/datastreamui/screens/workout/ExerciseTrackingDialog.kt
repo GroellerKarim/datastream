@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun ExerciseTrackingDialog(
     exercise: ExerciseDefinition,
+    previousSetTime: Long?,
     onDismiss: () -> Unit,
     onExerciseCompleted: (List<SetData>) -> Unit
 ) {
@@ -42,7 +43,7 @@ fun ExerciseTrackingDialog(
     var isFailure by remember { mutableStateOf(false) }
     var completedSets by remember { mutableStateOf<List<SetData>>(emptyList()) }
     
-    var lastSetTime by remember { mutableStateOf<Long?>(null) }
+    var lastSetTime by remember { mutableStateOf<Long?>(previousSetTime) }
     var restTime by remember { mutableStateOf<Long?>(null) }
     
     // Effect to update rest time periodically
