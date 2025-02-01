@@ -1,3 +1,4 @@
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import eu.groeller.datastreamui.data.model.ExerciseDefinition
 import eu.groeller.datastreamui.screens.workout.SetData
 import eu.groeller.datastreamui.screens.workout.createDurationString
+import kotlinx.coroutines.delay
 
 @Composable
 fun ExerciseTrackingDialog(
@@ -39,11 +42,15 @@ fun ExerciseTrackingDialog(
     var isFailure by remember { mutableStateOf(false) }
     var completedSets by remember { mutableStateOf<List<SetData>>(emptyList()) }
     
-    // Rest timer state
-    val lastSetTime = remember { mutableStateOf<Long?>(null) }
-    val restTime by derivedStateOf {
-        lastSetTime.value?.let { lastTime ->
-            (System.currentTimeMillis() - lastTime) / 1000
+    var lastSetTime by remember { mutableStateOf<Long?>(null) }
+    var restTime by remember { mutableStateOf<Long?>(null) }
+    
+    // Effect to update rest time periodically
+    LaunchedEffect(lastSetTime) {
+        while(lastSetTime != null) {
+            Log.d("ExerciseTrackingDialog", "Updating rest time")
+            restTime = System.currentTimeMillis() - lastSetTime!!
+            kotlinx.coroutines.delay(1000) // Update every second
         }
     }
 
@@ -108,16 +115,17 @@ fun ExerciseTrackingDialog(
                     
                     Button(
                         onClick = {
-                            weight.toFloatOrNull()?.let { w ->
-                                reps.toIntOrNull()?.let { r ->
-                                    val setData = SetData(w, r, isFailure)
-                                    completedSets = completedSets + setData
-                                    lastSetTime.value = System.currentTimeMillis()
-                                    weight = ""
-                                    reps = ""
-                                    isFailure = false
-                                }
-                            }
+                            val newSet = SetData(
+                                weight = weight.toFloatOrNull() ?: 0f,
+                                reps = reps.toIntOrNull() ?: 0,
+                                isFailure = isFailure,
+                                timestamp = System.currentTimeMillis()
+                            )
+                            completedSets = completedSets + newSet
+                            lastSetTime = System.currentTimeMillis()
+                            weight = ""
+                            reps = ""
+                            isFailure = false
                         },
                         enabled = weight.isNotBlank() && reps.isNotBlank()
                     ) {
