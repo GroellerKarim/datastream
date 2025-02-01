@@ -3,7 +3,6 @@ package eu.groeller.datastreamserver.presentation.api.exercise;
 import eu.groeller.datastreamserver.configuration.security.CustomUserDetails;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutRequest;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutTypeRequest;
-import eu.groeller.datastreamserver.presentation.response.exercise.ExerciseDefinitionResponse;
 import eu.groeller.datastreamserver.presentation.response.exercise.WorkoutResponse;
 import eu.groeller.datastreamserver.presentation.response.exercise.WorkoutTypeResponse;
 import eu.groeller.datastreamserver.service.exercise.WorkoutService;
@@ -14,15 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
-import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -59,7 +53,7 @@ public class WorkoutController {
         val responses = workoutService.getWorkouts(userDetails.getUser(), pageable)
                         .map(WorkoutResponse::new);
 
-        log.info("Retrieved {} workouts for user: {}", responses.getSize(), userDetails.getUsername());
+        log.info("Retrieved {} workouts for user: {}", responses.getContent().size(), userDetails.getUsername());
         log.debug("Workout IDs: {}", responses.stream().map(WorkoutResponse::workoutId).collect(Collectors.toSet()));
         
         return ResponseEntity.ok(responses);
