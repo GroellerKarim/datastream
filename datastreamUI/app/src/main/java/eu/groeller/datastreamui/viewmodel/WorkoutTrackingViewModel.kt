@@ -2,6 +2,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.groeller.datastreamui.data.exercise.ExerciseRepository
 import eu.groeller.datastreamui.data.model.ExerciseDefinition
+import eu.groeller.datastreamui.data.model.ExerciseType
 import eu.groeller.datastreamui.data.model.WorkoutType
 import eu.groeller.datastreamui.data.workout.WorkoutRepository
 import eu.groeller.datastreamui.screens.workout.SetData
@@ -89,6 +90,24 @@ class WorkoutTrackingViewModel(
             try {
                 workoutRepository.addWorkoutType(workoutType)
                 loadWorkoutTypes()
+            } catch (e: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        error = e.message ?: "Failed to add workout type"
+                    )
+                }
+            }
+        }
+    }
+
+    fun addExerciseDefinition(name: String, type: ExerciseType) {
+        viewModelScope.launch {
+            try {
+                exerciseRepository.createExercise(name, type)?.let { def ->
+                    _uiState.update { currentState ->
+                        currentState.copy(allExercises = currentState.allExercises + def)
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.update { currentState ->
                     currentState.copy(

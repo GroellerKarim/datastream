@@ -26,6 +26,7 @@ public class ExerciseDefinitionController {
     public ResponseEntity<ExerciseDefinitionResponse> createExerciseDefinition(@RequestBody CreateExerciseDefinitionRequest request) {
         log.info("Creating new Exercise Definition [{}]", request);
 
+        // TODO: Return different fixed status code when "already exists" exception is returned
         val def = exerciseDefinitionService.createExerciseDefinition(request);
 
         log.trace("Created Exercise Definition, building response");

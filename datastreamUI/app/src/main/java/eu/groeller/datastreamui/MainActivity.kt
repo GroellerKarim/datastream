@@ -28,6 +28,8 @@ import kotlinx.serialization.Serializable
 
 
 public val Context.datastore: DataStore<Preferences> by preferencesDataStore("settings")
+public const val DS_TAG = "DS"
+
 class MainActivity : ComponentActivity() {
 
     private var token: String? = null

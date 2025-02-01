@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -39,10 +40,12 @@ fun ExerciseSelectionDialog(
     onDismiss: () -> Unit,
     onExerciseSelected: (ExerciseDefinition) -> Unit,
     recentExercises: List<ExerciseDefinition>,
-    allExercises: List<ExerciseDefinition>
+    allExercises: List<ExerciseDefinition>,
+    onAddExercise: (name: String, type: ExerciseType) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedType by remember { mutableStateOf<ExerciseType?>(null) }
+    var showAddDialog by remember { mutableStateOf(false) }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -136,11 +139,28 @@ fun ExerciseSelectionDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+                Button(onClick = { showAddDialog = true }) {
+                    Text("Add Exercise")
+                }
             }
         }
     )
+
+    if (showAddDialog) {
+        CreateExerciseDialog(
+            onDismiss = { showAddDialog = false },
+            onConfirm = { name, type -> 
+                onAddExercise(name, type)
+                showAddDialog = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -170,4 +190,78 @@ private fun ExerciseItem(
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CreateExerciseDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (name: String, type: ExerciseType) -> Unit
+) {
+    var exerciseName by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(ExerciseType.SETS_REPS) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Exercise") },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                OutlinedTextField(
+                    value = exerciseName,
+                    onValueChange = { exerciseName = it },
+                    label = { Text("Exercise Name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    ExerciseType.entries.forEachIndexed { index, type ->
+                        SegmentedButton(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                            shape = SegmentedButtonDefaults.itemShape(
+                                index = index,
+                                count = ExerciseType.entries.size
+                            ),
+                            icon = { },
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.3f),
+                            )
+                        ) {
+                            Text(
+                                when(type) {
+                                    ExerciseType.SETS_REPS -> "Sets & Reps"
+                                    ExerciseType.SETS_TIME -> "Sets & Time"
+                                    ExerciseType.DISTANCE -> "Distance"
+                                },
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { 
+                    if (exerciseName.isNotBlank()) {
+                        onConfirm(exerciseName, selectedType)
+                    }
+                },
+                enabled = exerciseName.isNotBlank()
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 } 

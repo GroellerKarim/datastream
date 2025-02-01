@@ -167,6 +167,7 @@ fun WorkoutTrackingScreen(
                 showExerciseSelection = false
             },
             recentExercises = uiState.recentExercises,
+            onAddExercise =  { name, type -> viewModel.addExerciseDefinition(name, type)},
             allExercises = uiState.allExercises
         )
     }

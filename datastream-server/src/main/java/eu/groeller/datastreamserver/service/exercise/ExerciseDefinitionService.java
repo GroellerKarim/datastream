@@ -30,6 +30,7 @@ public class ExerciseDefinitionService {
     public ExerciseDefinition createExerciseDefinition(@NonNull CreateExerciseDefinitionRequest request) {
         DtoUtils.checkAllNullsAndBlanks(request);
 
+        // TODO: Add proper "already exists" exception
         if (exerciseDefinitionRepository.existsByNameAndType(request.name(), request.type())) {
             log.debug("Exercise Definition with name [{}] & type [{}] already exists", request.name(), request.type());
             throw new IllegalArgumentException("Exercise definition with name " + request.name() + " and type " + request.type() + " already exists");
