@@ -86,8 +86,10 @@ class MainActivity : ComponentActivity() {
                 composable<WorkoutTracking> { backStackEntry ->
                     val args = backStackEntry.toRoute<WorkoutRoute>()
                     val viewModel = viewModel<WorkoutTrackingViewModel> {
-                        val exerciseRepository = ExerciseRepository(injectionHolder.httpConfig.v1HttpClient, User(args.username, "hihi", args.token))
-                        WorkoutTrackingViewModel(exerciseRepository)
+                        val user = User(args.username, "hihi", args.token)
+                        val exerciseRepository = ExerciseRepository(injectionHolder.httpConfig.v1HttpClient, user)
+                        val workoutRepository = WorkoutRepository(injectionHolder.httpConfig.v1HttpClient, user)
+                        WorkoutTrackingViewModel(exerciseRepository, workoutRepository)
                     }
                     WorkoutTrackingScreen(
                         viewModel = viewModel,

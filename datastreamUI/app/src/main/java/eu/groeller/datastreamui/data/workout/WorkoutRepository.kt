@@ -11,12 +11,18 @@ import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.http.parameters
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import android.util.Log
 
 class WorkoutRepository(private val httpClient: HttpClient, private val user: User) {
+    companion object {
+        private const val TAG = "WorkoutRepository"  // Tag for filtering logs
+    }
 
     val fetchWorkoutState: Flow<WorkoutState> = flow { emit(getWorkouts(user)) }
 
@@ -38,15 +44,26 @@ class WorkoutRepository(private val httpClient: HttpClient, private val user: Us
     }
 
     suspend fun addWorkoutType(workoutType: String): WorkoutType? {
-        val response = httpClient.post("${V1_PATH}/workouts/workout-type") {
-            bearerAuth(user.token)
-            setBody(mapOf("name" to workoutType))
-        }
+        Log.d(TAG, "Adding new workout type: $workoutType")
+        
+        try {
+            val response = httpClient.post("${V1_PATH}/workouts/workout-type") {
+                contentType(ContentType.Application.Json)
+                bearerAuth(user.token)
+                setBody(mapOf("name" to workoutType))
+            }
 
-        if(response.status.isSuccess()) {
-            return response.body()
-        }
+            if(response.status.isSuccess()) {
+                val result: WorkoutType = response.body()
+                Log.d(TAG, "Successfully added workout type: ${result.name}")
+                return result
+            }
 
-        return null
+            Log.e(TAG, "Failed to add workout type. Status: ${response.status}")
+            return null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding workout type", e)
+            return null
+        }
     }
 }

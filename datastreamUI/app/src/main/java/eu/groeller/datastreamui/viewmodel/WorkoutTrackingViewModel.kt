@@ -3,6 +3,7 @@ import androidx.lifecycle.viewModelScope
 import eu.groeller.datastreamui.data.exercise.ExerciseRepository
 import eu.groeller.datastreamui.data.model.ExerciseDefinition
 import eu.groeller.datastreamui.data.model.WorkoutType
+import eu.groeller.datastreamui.data.workout.WorkoutRepository
 import eu.groeller.datastreamui.screens.workout.SetData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +25,8 @@ data class WorkoutTrackingState(
 )
 
 class WorkoutTrackingViewModel(
-    private val exerciseRepository: ExerciseRepository
+    private val exerciseRepository: ExerciseRepository,
+    private val workoutRepository: WorkoutRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(WorkoutTrackingState())
     val uiState: StateFlow<WorkoutTrackingState> = _uiState.asStateFlow()
@@ -76,6 +78,21 @@ class WorkoutTrackingViewModel(
                     currentState.copy(
                         isLoading = false,
                         error = e.message ?: "Failed to load exercises"
+                    )
+                }
+            }
+        }
+    }
+
+    fun addWorkoutType(workoutType: String) {
+        viewModelScope.launch {
+            try {
+                workoutRepository.addWorkoutType(workoutType)
+                loadWorkoutTypes()
+            } catch (e: Exception) {
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        error = e.message ?: "Failed to add workout type"
                     )
                 }
             }

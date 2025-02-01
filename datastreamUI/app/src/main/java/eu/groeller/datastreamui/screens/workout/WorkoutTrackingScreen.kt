@@ -52,6 +52,9 @@ fun WorkoutTrackingScreen(
             onWorkoutTypeSelected = { workoutType ->
                 viewModel.selectWorkoutType(workoutType)
             },
+            onAddWorkoutType = { workoutTypeString ->
+                viewModel.addWorkoutType(workoutTypeString)
+            },
             isLoading = uiState.isLoading
         )
         return // Don't show the rest of the UI until workout type is selected

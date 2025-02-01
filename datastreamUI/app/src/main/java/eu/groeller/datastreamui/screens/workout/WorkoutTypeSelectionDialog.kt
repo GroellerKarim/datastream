@@ -15,8 +15,11 @@ fun WorkoutTypeSelectionDialog(
     workoutTypes: List<WorkoutType>,
     onDismiss: () -> Unit,
     onWorkoutTypeSelected: (WorkoutType) -> Unit,
+    onAddWorkoutType: (String) -> Unit,
     isLoading: Boolean = false
 ) {
+    var showAddDialog by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Select Workout Type") },
@@ -28,28 +31,88 @@ fun WorkoutTypeSelectionDialog(
                     )
                 }
             } else {
-                LazyColumn {
-                    items(workoutTypes) { workoutType ->
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onWorkoutTypeSelected(workoutType) }
-                                .padding(vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = workoutType.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(16.dp)
-                            )
+                Column {
+                    LazyColumn {
+                        items(workoutTypes) { workoutType ->
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onWorkoutTypeSelected(workoutType) }
+                                    .padding(vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = workoutType.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                            if (workoutType != workoutTypes.last()) {
+                                Divider()
+                            }
                         }
-                        if (workoutType != workoutTypes.last()) {
-                            Divider()
-                        }
+                    }
+                    
+                    Button(
+                        onClick = { showAddDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                    ) {
+                        Text("Add New Type")
                     }
                 }
             }
         },
         confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+
+    if (showAddDialog) {
+        AddWorkoutTypeDialog(
+            onDismiss = { showAddDialog = false },
+            onConfirm = { newType -> 
+                onAddWorkoutType(newType)
+                showAddDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun AddWorkoutTypeDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var typeName by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Workout Type") },
+        text = {
+            OutlinedTextField(
+                value = typeName,
+                onValueChange = { typeName = it },
+                label = { Text("Type Name") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = { 
+                    if (typeName.isNotBlank()) {
+                        onConfirm(typeName)
+                        onDismiss()
+                    }
+                },
+                enabled = typeName.isNotBlank()
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
