@@ -19,6 +19,7 @@ fun WorkoutTypeSelectionDialog(
     isLoading: Boolean = false
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var hasDismissed by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -64,7 +65,12 @@ fun WorkoutTypeSelectionDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = {
+                if (!hasDismissed) {
+                    hasDismissed = true
+                    onDismiss.invoke()
+                }
+            }) {
                 Text("Cancel")
             }
         }
