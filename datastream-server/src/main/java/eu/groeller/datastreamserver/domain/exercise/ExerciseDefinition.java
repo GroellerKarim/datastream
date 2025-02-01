@@ -14,11 +14,13 @@ import lombok.Setter;
 @AllArgsConstructor
 
 @Entity
-@Table(name = "exercise_definition")
+@Table(name = "exercise_definition",
+       uniqueConstraints = {
+           @UniqueConstraint(columnNames = {"name", "type"})
+       })
 public class ExerciseDefinition extends AbstractEntity {
 
     @NotNull
-    @Column(unique = true)
     private String name;
 
     @NotNull

@@ -24,12 +24,17 @@ public class ExerciseDefinitionController {
 
     @PostMapping("/create")
     public ResponseEntity<ExerciseDefinitionResponse> createExerciseDefinition(@RequestBody CreateExerciseDefinitionRequest request) {
-        return ResponseEntity.ok(new ExerciseDefinitionResponse(exerciseDefinitionService.createExerciseDefinition(request)));
+        log.info("Creating new Exercise Definition [{}]", request);
+
+        val def = exerciseDefinitionService.createExerciseDefinition(request);
+
+        log.trace("Created Exercise Definition, building response");
+        return ResponseEntity.ok(new ExerciseDefinitionResponse(def));
     }
 
     @GetMapping("/all")
     public ResponseEntity<List<ExerciseDefinitionResponse>> getAll(@AuthenticationPrincipal CustomUserDetails details) {
-        log.info("Retrieving all exerciseDefinitiosn for {}", details);
+        log.info("Retrieving all exerciseDefinition for {}", details);
 
         val exDefs = exerciseDefinitionService.getAll();
         log.trace("Retrieved {} exercise definitions", exDefs.size());
