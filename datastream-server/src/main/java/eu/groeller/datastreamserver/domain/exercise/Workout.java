@@ -2,6 +2,7 @@ package eu.groeller.datastreamserver.domain.exercise;
 
 import eu.groeller.datastreamserver.domain.AbstractEntity;
 import eu.groeller.datastreamserver.domain.User;
+import eu.groeller.datastreamserver.service.exceptions.DSIllegalArgumentException;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -10,9 +11,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @NoArgsConstructor
 
@@ -31,7 +30,14 @@ public class Workout extends AbstractEntity {
     private Long duration;
 
     @NotNull
-    private OffsetDateTime date;
+    private OffsetDateTime startTime;
+
+    @NotNull
+    private OffsetDateTime endTime;
+
+    @ManyToOne
+    @NotNull
+    private WorkoutType workoutType;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "workout_id")
@@ -40,34 +46,23 @@ public class Workout extends AbstractEntity {
     @Column(name = "average_rest_time")
     private Double averageRestTime;
 
-    public Workout(@NonNull User user, @NonNull OffsetDateTime date, @NonNull List<ExerciseRecord> exercises) {
+    public Workout(@NonNull User user, @NonNull OffsetDateTime startTime, @NonNull OffsetDateTime endTime, @NonNull List<ExerciseRecord> exercises, @NonNull WorkoutType type) {
         this.user = user;
-        this.date = date;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.workoutType = type;
 
-        if(exercises.isEmpty()) throw new IllegalArgumentException("Exercises must not be empty!");
+        if (exercises.isEmpty())
+            throw new DSIllegalArgumentException("Exercises must not be empty!");
+
         this.exercises = new ArrayList<>(exercises);
+        this.exercises.sort(Comparator.comparingInt(ExerciseRecord::getOrderIndex));
         this.exercises.forEach(exercise -> exercise.setWorkout(this));
 
-        this.duration = getWorkoutDuration(this.exercises);
-    }
+        val lastExerciseEndTime = this.exercises.getLast().getEndTime();
+        if (lastExerciseEndTime.isAfter(this.endTime))
+            this.endTime = lastExerciseEndTime;
 
-    private Long getWorkoutDuration(List<ExerciseRecord> exercises) {
-        val exerciseList = exercises.stream()
-                .sorted(Comparator.comparingInt(ExerciseRecord::getOrderIndex))
-                .collect(Collectors.toCollection(LinkedList::new));
-
-        val firstExercise = exerciseList.getFirst();
-        val lastExercise = exerciseList.getLast();
-
-        if (firstExercise == null) {
-            throw new NullPointerException("Exercise list has been wrongly created, first element is null");
-        }
-
-        if (firstExercise == lastExercise) {
-            return Duration.between(firstExercise.getStartTime(), firstExercise.getEndTime()).toMillis();
-        }
-        else {
-            return Duration.between(firstExercise.getStartTime(), lastExercise.getEndTime()).toMillis();
-        }
+        this.duration = Duration.between(startTime, endTime).toMillis();
     }
 }

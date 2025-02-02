@@ -10,16 +10,18 @@ public record WorkoutResponse(
         Long workoutId,
         Long durationMs,
         OffsetDateTime date,
-        Set<ExerciseRecordResponse> exercises
+        Set<ExerciseRecordResponse> exercises,
+        String name
 ) {
     public WorkoutResponse(Workout workout) {
         this(
                 workout.getId(),
                 workout.getDuration(),
-                workout.getDate(),
+                workout.getStartTime(),
                 workout.getExercises().stream()
                         .map(ExerciseRecordResponse::new)
-                        .collect(Collectors.toSet())
+                        .collect(Collectors.toSet()),
+                workout.getWorkoutType().getName()
         );
     }
 }

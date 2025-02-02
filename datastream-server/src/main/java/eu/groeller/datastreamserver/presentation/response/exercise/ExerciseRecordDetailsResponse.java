@@ -17,7 +17,7 @@ public class ExerciseRecordDetailsResponse {
     // For SetBasedExerciseRecord
     private List<ExerciseSetResponse> sets = null;
 
-    // Common for both
+    // Only for DistanceExerciseRecord
     private Double weightKg = null;
 
     public ExerciseRecordDetailsResponse(ExerciseRecord record) {
@@ -28,8 +28,9 @@ public class ExerciseRecordDetailsResponse {
                 this.weightKg = distanceRecord.getWeightKg();
             }
             case SetBasedExerciseRecord setBasedRecord -> {
-                this.weightKg = setBasedRecord.getWeightKg();
-                this.sets = setBasedRecord.getSets().stream().map(ExerciseSetResponse::new).toList();
+                this.sets = setBasedRecord.getSets().stream()
+                    .map(ExerciseSetResponse::new)
+                    .toList();
             }
             default -> throw new IllegalStateException("Unexpected exercise class type: " + record.getClass());
         }

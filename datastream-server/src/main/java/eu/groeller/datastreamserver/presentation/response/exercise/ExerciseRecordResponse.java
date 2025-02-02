@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 public record ExerciseRecordResponse(
         Long exerciseRecordId,
         Long exerciseDefinitionId,
+        String exerciseName,
         ExerciseType type,
         OffsetDateTime startTime,
         OffsetDateTime endTime,
@@ -18,6 +19,7 @@ public record ExerciseRecordResponse(
         this(
                 record.getId(),
                 record.getExerciseDefinition().getId(),
+                record.getExerciseDefinition().getName(),
                 record.getExerciseDefinition().getType(),
                 record.getStartTime(),
                 record.getEndTime(),

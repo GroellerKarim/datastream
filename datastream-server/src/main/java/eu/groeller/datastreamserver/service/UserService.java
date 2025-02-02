@@ -8,13 +8,16 @@ import eu.groeller.datastreamserver.presentation.response.user.UserLoginResponse
 import eu.groeller.datastreamserver.service.security.JwtService;
 import eu.groeller.datastreamserver.service.utils.DtoUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 
+@Slf4j
 @RequiredArgsConstructor
+
 @Service
 public class UserService {
     
@@ -23,31 +26,48 @@ public class UserService {
     private final JwtService jwtService;
 
     public User createUser(UserRequest dto) {
-        Objects.requireNonNull(dto, "UserRequest Body must not be null");
+        if (dto == null) {
+            log.warn("UserRequest Dto was null");
+            throw new NullPointerException("UserRequest Body must not be null");
+        }
         DtoUtils.checkAllNullsAndBlanks(dto);
 
-        if(userRepository.existsByEmail(dto.email())) 
+        if(userRepository.existsByEmail(dto.email())) {
+            log.warn("Email [{}] is already used by a different account", dto.email());
             throw new IllegalArgumentException("Email " + dto.email() + " is already used by a different account.");
-        if(userRepository.existsByUsername(dto.username())) 
+        }
+        if(userRepository.existsByUsername(dto.username())) {
+            log.warn("Username [{}] is already used by a different account", dto.username());
             throw new IllegalArgumentException("Username " + dto.username() + " is already used by a different account.");
+        }
 
-        var user = new User(dto.username(), dto.email(), dto.password(), passwordEncoder);
-        return userRepository.save(user);
+        var user =  userRepository.save(new User(dto.username(), dto.email(), dto.password(), passwordEncoder));
+        log.info("Created User [{}]", user.getUsername());
+        return user;
     }
 
     public UserLoginResponse login(UserLoginRequest dto) {
-        Objects.requireNonNull(dto, "UserLoginRequest Body must not be null");
+        if (dto == null) {
+            log.warn("UserLoginRequest Dto was null");
+            throw new NullPointerException("UserLoginRequest Body must not be null");
+        }
         DtoUtils.checkAllNullsAndBlanks(dto);
 
         // TODO CHANGE EXCEPTIONS
         val user = userRepository.findByEmail(dto.email())
-                .orElseThrow(() -> new IllegalArgumentException("No user with email [" + dto.email() + "] found!"));
+                .orElseThrow(() -> {
+                    log.warn("No user with email [{}] found!", dto.email());
+                    return new IllegalArgumentException("No user with email [" + dto.email() + "] found!");
+                });
 
+        log.debug("Comparing passwords");
         if (!user.comparePasswords(dto.password(), passwordEncoder)) {
+            log.warn("Invalid password provided for user [{}]", user.getUsername());
             throw new IllegalArgumentException("Invalid password");
         }
 
         String token = jwtService.generateToken(user);
+        log.info("User Login accept, token generated, building Dto");
         return new UserLoginResponse(user.getUsername(), user.getEmail(), token);
     }
 }

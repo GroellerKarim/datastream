@@ -26,10 +26,10 @@ public class DistanceExerciseRecord extends ExerciseRecord {
 
     @NotNull
     private Long duration;
-    
+
     @Column(name = "distance_per_unit")
     private Double distancePerUnit;
-    
+
     @Column(name = "weight_kg")
     private Double weightKg;
 }
