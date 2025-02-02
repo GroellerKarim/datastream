@@ -5,6 +5,8 @@ import java.util.List;
 
 public record CreateWorkoutRequest(
         List<ExerciseRecordRequest> exercises,
-        String type
+        String type,
+        OffsetDateTime startTime,
+        OffsetDateTime endTime
 ) {
 }

@@ -9,6 +9,7 @@ import eu.groeller.datastreamserver.persistence.user.UserRepository;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutRequest;
 import eu.groeller.datastreamserver.presentation.request.exercise.ExerciseRecordRequest;
 import eu.groeller.datastreamserver.service.exercise.WorkoutService;
+import lombok.val;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,14 +44,17 @@ class WorkoutControllerTest {
 
     @Test
     void createWorkout_WhenNotAuthenticated_Returns401() throws Exception {
+        val now = OffsetDateTime.now();
         CreateWorkoutRequest request = new CreateWorkoutRequest(
                 List.of(new ExerciseRecordRequest(1L, OffsetDateTime.now(), OffsetDateTime.now().plusMinutes(30), null, 1)),
-                "Pull-Day"
+                "Pull-Day",
+                now,
+                now.plusHours(1)
         );
 
         mockMvc.perform(post("/api/v1/workouts")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
 
         verify(workoutService, never()).createWorkout(any(), any());
@@ -64,7 +68,9 @@ class WorkoutControllerTest {
         OffsetDateTime now = OffsetDateTime.now();
         CreateWorkoutRequest request = new CreateWorkoutRequest(
                 List.of(new ExerciseRecordRequest(1L, now, now.plusMinutes(30), null, 1)),
-                "Pull"
+                "Pull",
+                now,
+                now.plusHours(1)
         );
 
         User mockUser = new User("testuser", "test@example.com", "password");
@@ -76,14 +82,14 @@ class WorkoutControllerTest {
         when(mockExerciseRecord.getExerciseDefinition()).thenReturn(ex);
 
         WorkoutType type = new WorkoutType("Pull");
-        Workout expectedWorkout = new Workout(mockUser, now, List.of(mockExerciseRecord), type);
+        Workout expectedWorkout = new Workout(mockUser, request.startTime(), request.endTime(), List.of(mockExerciseRecord), type);
         when(workoutService.createWorkout(eq(mockUser), any(CreateWorkoutRequest.class))).thenReturn(expectedWorkout);
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/workouts")
-                .contentType(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
                         .with(user(new CustomUserDetails(mockUser)))
-                .content(objectMapper.writeValueAsString(request)))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
 
         verify(workoutService).createWorkout(any(), any(CreateWorkoutRequest.class));

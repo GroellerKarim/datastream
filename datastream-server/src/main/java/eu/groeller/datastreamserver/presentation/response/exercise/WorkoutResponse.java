@@ -17,7 +17,7 @@ public record WorkoutResponse(
         this(
                 workout.getId(),
                 workout.getDuration(),
-                workout.getDate(),
+                workout.getStartTime(),
                 workout.getExercises().stream()
                         .map(ExerciseRecordResponse::new)
                         .collect(Collectors.toSet()),

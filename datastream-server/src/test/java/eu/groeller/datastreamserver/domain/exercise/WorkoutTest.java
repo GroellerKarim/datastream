@@ -1,6 +1,7 @@
 package eu.groeller.datastreamserver.domain.exercise;
 
 import eu.groeller.datastreamserver.domain.User;
+import eu.groeller.datastreamserver.service.exceptions.DSIllegalArgumentException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,36 +24,37 @@ class WorkoutTest {
 
     @Test
     void constructor_WhenExerciseListIsEmpty_ThrowsIllegalArgumentException() {
-        assertThatThrownBy(() -> new Workout(testUser, now, List.of(), new WorkoutType()))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> new Workout(testUser, now, now.plusHours(1), List.of(), new WorkoutType()))
+                .isInstanceOf(DSIllegalArgumentException.class)
                 .hasMessageContaining("Exercises must not be empty");
     }
 
     @Test
     void constructor_WhenUserIsNull_ThrowsNullPointerException() {
         ExerciseRecord record = createTestExerciseRecord();
-        
-        assertThatThrownBy(() -> new Workout(null, now, List.of(record), new WorkoutType()))
+
+        assertThatThrownBy(() -> new Workout(null, now, now.plusHours(1), List.of(record), new WorkoutType()))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void constructor_WhenDateIsNull_ThrowsNullPointerException() {
         ExerciseRecord record = createTestExerciseRecord();
-        
-        assertThatThrownBy(() -> new Workout(testUser, null, List.of(record), new WorkoutType()))
+
+        assertThatThrownBy(() -> new Workout(testUser, null, now.plusHours(1), List.of(record), new WorkoutType()))
                 .isInstanceOf(NullPointerException.class);
     }
 
     @Test
     void constructor_WhenExerciseListIsNull_ThrowsNullPointerException() {
-        assertThatThrownBy(() -> new Workout(testUser, now, null, new WorkoutType()))
+        assertThatThrownBy(() -> new Workout(testUser, now, now.plusHours(1), null, new WorkoutType()))
                 .isInstanceOf(NullPointerException.class);
     }
+
     @Test
     void constructor_WhenWorkoutTypeIsNull_ThrowsNullPointerException() {
         ExerciseRecord record = createTestExerciseRecord();
-        assertThatThrownBy(() -> new Workout(testUser, now, List.of(record), null))
+        assertThatThrownBy(() -> new Workout(testUser, now, now.plusHours(1), List.of(record), null))
                 .isInstanceOf(NullPointerException.class);
     }
 
@@ -60,9 +62,9 @@ class WorkoutTest {
     void constructor_WithSingleExercise_CalculatesDurationCorrectly() {
         // Arrange
         ExerciseRecord record = createTestExerciseRecord();
-        
+
         // Act
-        Workout workout = new Workout(testUser, now, List.of(record), new WorkoutType());
+        Workout workout = new Workout(testUser, now, now.plusMinutes(30), List.of(record), new WorkoutType());
 
         // Assert
         assertThat(workout.getDuration()).isEqualTo(30 * 60 * 1000); // 30 minutes in milliseconds
@@ -73,12 +75,14 @@ class WorkoutTest {
         // Arrange
         ExerciseRecord firstExercise = createTestExerciseRecord();
         ExerciseRecord secondExercise = createTestExerciseRecord(1, now.plusMinutes(35), now.plusMinutes(65));
-        
+
         // Act
-        Workout workout = new Workout(testUser, now, List.of(firstExercise, secondExercise), new WorkoutType());
+        Workout workout = new Workout(testUser, now, now.plusMinutes(65), List.of(firstExercise, secondExercise), new WorkoutType());
 
         // Assert
         assertThat(workout.getDuration()).isEqualTo(65 * 60 * 1000); // 65 minutes in milliseconds
+        assertThat(workout.getStartTime()).isEqualTo(now);
+        assertThat(workout.getEndTime()).isEqualTo(now.plusMinutes(65));
     }
 
     private ExerciseRecord createTestExerciseRecord() {

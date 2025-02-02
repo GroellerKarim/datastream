@@ -1,32 +1,25 @@
 package eu.groeller.datastreamserver.service.exercise;
 
 import eu.groeller.datastreamserver.domain.User;
-import eu.groeller.datastreamserver.domain.exercise.ExerciseDefinition;
 import eu.groeller.datastreamserver.domain.exercise.ExerciseRecord;
 import eu.groeller.datastreamserver.domain.exercise.Workout;
 import eu.groeller.datastreamserver.domain.exercise.WorkoutType;
 import eu.groeller.datastreamserver.persistence.exercise.WorkoutRepository;
 import eu.groeller.datastreamserver.persistence.exercise.WorkoutTypeRepository;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutRequest;
+import eu.groeller.datastreamserver.service.exceptions.DSIllegalArgumentException;
 import eu.groeller.datastreamserver.service.utils.DtoUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Set;
-import java.util.Comparator;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -43,10 +36,10 @@ public class WorkoutService {
 
     @Transactional(readOnly = false)
     public Workout createWorkout(@NonNull User user, @NonNull CreateWorkoutRequest request) {
-        DtoUtils.checkNulls(request, List.of("exercises", "type"));
+        DtoUtils.checkAllNulls(request);
 
         if (request.exercises().isEmpty()) {
-            throw new IllegalArgumentException("Exercises must not be empty");
+            throw new DSIllegalArgumentException("Exercises must not be empty");
         }
 
         val workoutType = workoutTypeRepository.findByName(request.type())
@@ -60,7 +53,7 @@ public class WorkoutService {
                 .map(exerciseRecordService::createExerciseRecord)
                 .toList();
 
-        Workout workout = new Workout(user, OffsetDateTime.now(clock), exerciseRecords, workoutType);
+        Workout workout = new Workout(user, request.startTime(), request.endTime(), exerciseRecords, workoutType);
         return workoutRepository.save(workout);
     }
 
@@ -68,7 +61,7 @@ public class WorkoutService {
         log.debug("Retrieving workouts for user: {}", user.getUsername());
 
         Slice<Workout> workouts = workoutRepository.findByUserOrderByCreatedAtDesc(user, pageable);
-        
+
         log.debug("Found {} workouts for user: {}", workouts.getSize(), user.getUsername());
         return workouts;
     }

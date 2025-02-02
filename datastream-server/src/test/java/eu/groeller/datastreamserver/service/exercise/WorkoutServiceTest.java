@@ -8,6 +8,7 @@ import eu.groeller.datastreamserver.persistence.exercise.WorkoutRepository;
 import eu.groeller.datastreamserver.persistence.exercise.WorkoutTypeRepository;
 import eu.groeller.datastreamserver.presentation.request.exercise.CreateWorkoutRequest;
 import eu.groeller.datastreamserver.presentation.request.exercise.ExerciseRecordRequest;
+import eu.groeller.datastreamserver.service.exceptions.DSIllegalArgumentException;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,30 +58,66 @@ public class WorkoutServiceTest {
     void createWorkout_WhenRequestIsNull_ThrowsNullPointerException() {
         assertThatThrownBy(() -> workoutService.createWorkout(testUser, null))
                 .isInstanceOf(NullPointerException.class);
-        
+
         verify(workoutRepository, never()).save(any());
         verify(exerciseRecordService, never()).createExerciseRecord(any());
     }
 
     @Test
     void createWorkout_WhenUserIsNull_ThrowsNullPointerException() {
-        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(), "Pull-Day");
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(), "Pull-Day", OffsetDateTime.now(), OffsetDateTime.now());
 
         assertThatThrownBy(() -> workoutService.createWorkout(null, request))
                 .isInstanceOf(NullPointerException.class);
-        
+
         verify(workoutRepository, never()).save(any());
         verify(exerciseRecordService, never()).createExerciseRecord(any());
     }
 
     @Test
     void createWorkout_WhenExercisesIsNull_ThrowsNullPointerException() {
-        CreateWorkoutRequest request = new CreateWorkoutRequest(null, "Pull-Day");
+        CreateWorkoutRequest request = new CreateWorkoutRequest(null, "Pull-Day", OffsetDateTime.now(), OffsetDateTime.now());
 
         assertThatThrownBy(() -> workoutService.createWorkout(testUser, request))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("exercises");
-        
+
+        verify(workoutRepository, never()).save(any());
+        verify(exerciseRecordService, never()).createExerciseRecord(any());
+    }
+
+    @Test
+    void createWorkout_WhenTypeIsNull_ThrowsNullPointerException() {
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(), null, OffsetDateTime.now(), OffsetDateTime.now());
+
+        assertThatThrownBy(() -> workoutService.createWorkout(testUser, request))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("type");
+
+        verify(workoutRepository, never()).save(any());
+        verify(exerciseRecordService, never()).createExerciseRecord(any());
+    }
+
+    @Test
+    void createWorkout_WhenStartTimeIsNull_ThrowsNullPointerException() {
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(), "Pull Day", null, OffsetDateTime.now());
+
+        assertThatThrownBy(() -> workoutService.createWorkout(testUser, request))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("startTime");
+
+        verify(workoutRepository, never()).save(any());
+        verify(exerciseRecordService, never()).createExerciseRecord(any());
+    }
+
+    @Test
+    void createWorkout_WhenEndTimeIsNull_ThrowsNullPointerException() {
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(), "Pull Day", OffsetDateTime.now(), null);
+
+        assertThatThrownBy(() -> workoutService.createWorkout(testUser, request))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("endTime");
+
         verify(workoutRepository, never()).save(any());
         verify(exerciseRecordService, never()).createExerciseRecord(any());
     }
@@ -89,21 +126,18 @@ public class WorkoutServiceTest {
     void createWorkout_WhenValidRequest_CreatesWorkout() {
         // Arrange
         val now = OffsetDateTime.now();
-        when(clock.instant()).thenReturn(now.toInstant());
-        when(clock.getZone()).thenReturn(now.toZonedDateTime().getZone());
 
         val workoutType = new WorkoutType("Pull-Day");
         ExerciseRecordRequest exerciseRequest = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), null, 1);
-        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(exerciseRequest), workoutType.getName());
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(exerciseRequest), workoutType.getName(), now, now.plusHours(1));
 
         when(workoutTypeRepository.findByName(workoutType.getName())).thenReturn(Optional.of(workoutType));
 
         ExerciseRecord mockExerciseRecord = mock(ExerciseRecord.class);
-        when(mockExerciseRecord.getStartTime()).thenReturn(now);
-        when(mockExerciseRecord.getEndTime()).thenReturn(now.plusMinutes(30));
+        when(mockExerciseRecord.getEndTime()).thenReturn(now.plusMinutes(10));
 
-        Workout expectedWorkout = new Workout(testUser, now, List.of(mockExerciseRecord), workoutType);
-        
+        Workout expectedWorkout = new Workout(testUser, request.startTime(), request.endTime(), List.of(mockExerciseRecord), workoutType);
+
         when(exerciseRecordService.createExerciseRecord(exerciseRequest)).thenReturn(mockExerciseRecord);
         when(workoutRepository.save(any(Workout.class))).thenReturn(expectedWorkout);
 
@@ -113,10 +147,45 @@ public class WorkoutServiceTest {
         // Assert
         assertThat(result).isNotNull();
         assertThat(result.getUser()).isEqualTo(testUser);
-        assertThat(result.getDate()).isEqualTo(now);
+        assertThat(result.getStartTime()).isEqualTo(request.startTime());
+        assertThat(result.getEndTime()).isEqualTo(request.endTime());
         assertThat(result.getWorkoutType()).isEqualTo(workoutType);
         assertThat(result.getExercises()).hasSize(1);
-        
+
+        verify(exerciseRecordService).createExerciseRecord(exerciseRequest);
+        verify(workoutRepository).save(any(Workout.class));
+    }
+
+    @Test
+    void createWorkout_WhenLastRecordEndTimeAfterEndTime_CreatesWorkoutWithEndTimeEqualToLastRecordEndTime() {
+        // Arrange
+        val now = OffsetDateTime.now();
+
+        val workoutType = new WorkoutType("Pull-Day");
+        ExerciseRecordRequest exerciseRequest = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), null, 1);
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(exerciseRequest), workoutType.getName(), now, now.plusHours(1));
+
+        when(workoutTypeRepository.findByName(workoutType.getName())).thenReturn(Optional.of(workoutType));
+
+        ExerciseRecord mockExerciseRecord = mock(ExerciseRecord.class);
+        when(mockExerciseRecord.getEndTime()).thenReturn(now.plusHours(2));
+
+        Workout expectedWorkout = new Workout(testUser, request.startTime(), request.endTime(), List.of(mockExerciseRecord), workoutType);
+
+        when(exerciseRecordService.createExerciseRecord(exerciseRequest)).thenReturn(mockExerciseRecord);
+        when(workoutRepository.save(any(Workout.class))).thenReturn(expectedWorkout);
+
+        // Act
+        Workout result = workoutService.createWorkout(testUser, request);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.getUser()).isEqualTo(testUser);
+        assertThat(result.getStartTime()).isEqualTo(request.startTime());
+        assertThat(result.getEndTime()).isEqualTo(mockExerciseRecord.getEndTime());
+        assertThat(result.getWorkoutType()).isEqualTo(workoutType);
+        assertThat(result.getExercises()).hasSize(1);
+
         verify(exerciseRecordService).createExerciseRecord(exerciseRequest);
         verify(workoutRepository).save(any(Workout.class));
     }
@@ -125,13 +194,13 @@ public class WorkoutServiceTest {
     @Test
     void createWorkout_WhenExerciseListIsEmpty_ThrowsIllegalArgumentException() {
         // Arrange
-        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(), "Pull-Day");
+        CreateWorkoutRequest request = new CreateWorkoutRequest(List.of(), "Pull-Day", OffsetDateTime.now(), OffsetDateTime.now());
 
         // Act & Assert
         assertThatThrownBy(() -> workoutService.createWorkout(testUser, request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(DSIllegalArgumentException.class)
                 .hasMessageContaining("Exercises must not be empty");
-        
+
         verify(workoutRepository, never()).save(any());
         verify(exerciseRecordService, never()).createExerciseRecord(any());
     }
