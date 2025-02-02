@@ -40,17 +40,20 @@ fun ExerciseTrackingDialog(
     onDismiss: () -> Unit,
     onExerciseCompleted: (List<SetData>) -> Unit
 ) {
+    // Set Data
     var weight by remember { mutableStateOf("") }
     var reps by remember { mutableStateOf("") }
     var isFailure by remember { mutableStateOf(false) }
     var completedSets by remember { mutableStateOf<List<SetData>>(emptyList()) }
+    var currentSetStartTime by remember { mutableStateOf<OffsetDateTime?>(null) }
+    var currentEndTime by remember { mutableStateOf<OffsetDateTime?>(null) }
 
     var lastSetTime by remember { mutableStateOf<OffsetDateTime?>(previousSetTime) }
-    var restTime by remember { mutableStateOf<Long?>(null) }
-    var currentSetStartTime by remember { mutableStateOf<OffsetDateTime?>(null) }
+    var restTime by remember { mutableStateOf<Long?>(null) }    // For Timer
+    var setDuration by remember { mutableStateOf<Long?>(null) } // For Timer
+
     var isSetInProgress by remember { mutableStateOf(false) }
 
-    var setDuration by remember { mutableStateOf<Long?>(null) }
 
     // Effect to update rest time periodically
     LaunchedEffect(lastSetTime) {
@@ -80,13 +83,13 @@ fun ExerciseTrackingDialog(
                 )
                 if (isSetInProgress) {
                     Text(
-                        text = "Set duration: ${setDuration?.let { createDurationString(it) } ?: "00:00"}",
+                        text = "Set duration: ${setDuration?.let { createDurationString(it) } ?: "00:00:00"}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
                     Text(
-                        text = "Rest time: ${restTime?.let { createDurationString(it) } ?: "00:00"}",
+                        text = "Rest time: ${restTime?.let { createDurationString(it) } ?: "00:00:00"}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -109,7 +112,10 @@ fun ExerciseTrackingDialog(
                                 isFailure = false
                             } else {
                                 // Stop set
+                                val endTime = OffsetDateTime.now()  // Capture end time once
                                 isSetInProgress = false
+                                lastSetTime = endTime  // Use captured end time for rest timer
+                                currentEndTime = endTime  // Store for SetData creation
                             }
                         },
                         modifier = Modifier
@@ -170,11 +176,11 @@ fun ExerciseTrackingDialog(
                                         reps = reps.toIntOrNull() ?: 0,
                                         isFailure = isFailure,
                                         startTime = currentSetStartTime!!,
-                                        endTime = OffsetDateTime.now()
+                                        endTime = currentEndTime!!  // Use stored end time
                                     )
                                     completedSets = completedSets + newSet
-                                    lastSetTime = OffsetDateTime.now()
                                     currentSetStartTime = null
+                                    currentEndTime = null
                                     weight = ""
                                     reps = ""
                                     isFailure = false
