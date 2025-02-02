@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -268,5 +269,78 @@ public class ExerciseRecordServiceTest {
         assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
         SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
         assertThat(setRecord.getSets().getFirst().getPartialRepetitions()).isEqualTo(2);
+    }
+
+    @Test
+    void createExerciseRecord_WhenMultipleSets_OrdersSetsAndSetsCorrectStartEndTimes() {
+        // Arrange
+        ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
+        
+        // Create sets in random order
+        List<ExerciseSetRequest> setRequests = List.of(
+                new ExerciseSetRequest(now.plusMinutes(2), now.plusMinutes(3), false, 12, null, 50.0, 2),
+                new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, null, 50.0, 0),
+                new ExerciseSetRequest(now.plusMinutes(4), now.plusMinutes(5), false, 12, null, 50.0, 3),
+                new ExerciseSetRequest(now.plusMinutes(1), now.plusMinutes(2), false, 12, null, 50.0, 1)
+        );
+
+        val details = new ExerciseRecordDetailsRequest(
+                null, null, null, setRequests, 75.0
+        );
+        ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
+        when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
+
+        // Act
+        ExerciseRecord result = exerciseRecordService.createExerciseRecord(request);
+
+        // Assert
+        assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
+        SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
+        
+        // Verify sets are ordered correctly
+        List<ExerciseSet> orderedSets = setRecord.getSets();
+        assertThat(orderedSets).hasSize(4);
+        for (int i = 0; i < orderedSets.size(); i++) {
+            assertThat(orderedSets.get(i).getOrderIndex()).isEqualTo(i);
+        }
+
+        // Verify start time is from first set
+        assertThat(setRecord.getStartTime()).isEqualTo(now);
+        
+        // Verify end time is from last set
+        assertThat(setRecord.getEndTime()).isEqualTo(now.plusMinutes(5));
+    }
+
+    @Test
+    void createExerciseRecord_WhenDistanceExercise_SetsCorrectStartEndTimes() {
+        // Arrange
+        ExerciseDefinition definition = new ExerciseDefinition("Running", ExerciseType.DISTANCE);
+        val startTime = now;
+        val endTime = now.plusHours(1);  // 1 hour run
+        
+        val details = new ExerciseRecordDetailsRequest(
+                10.0,  // distance
+                DistanceUnit.KILOMETERS,
+                null,  // distancePerUnit
+                null,  // sets
+                null   // weightKg
+        );
+
+        ExerciseRecordRequest request = new ExerciseRecordRequest(1L, startTime, endTime, details, 1);
+        when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
+
+        // Act
+        ExerciseRecord result = exerciseRecordService.createExerciseRecord(request);
+
+        // Assert
+        assertThat(result).isInstanceOf(DistanceExerciseRecord.class);
+        DistanceExerciseRecord distanceRecord = (DistanceExerciseRecord) result;
+        
+        // Verify start and end times are set correctly
+        assertThat(distanceRecord.getStartTime()).isEqualTo(startTime);
+        assertThat(distanceRecord.getEndTime()).isEqualTo(endTime);
+        
+        // Verify duration is calculated correctly (in milliseconds)
+        assertThat(distanceRecord.getDuration()).isEqualTo(Duration.between(startTime, endTime).toMillis());
     }
 }

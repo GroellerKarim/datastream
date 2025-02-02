@@ -3,7 +3,10 @@ package eu.groeller.datastreamserver.domain.exercise;
 import eu.groeller.datastreamserver.domain.AbstractEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
@@ -35,6 +38,4 @@ public abstract class ExerciseRecord extends AbstractEntity {
 
     @NotNull
     private Integer orderIndex;
-
-
-} 
+}

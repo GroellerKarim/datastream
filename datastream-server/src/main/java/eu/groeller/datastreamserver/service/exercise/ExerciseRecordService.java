@@ -12,6 +12,7 @@ import lombok.val;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -32,8 +33,7 @@ public class ExerciseRecordService {
             case SETS_REPS, SETS_TIME -> createSetBasedExerciseRecord(request, definition);
         };
 
-        record.setStartTime(request.startTime());
-        record.setEndTime(request.endTime());
+
         record.setOrderIndex(request.order());
 
         return record;
@@ -51,6 +51,9 @@ public class ExerciseRecordService {
         record.setDuration(Duration.between(request.startTime(), request.endTime()).toMillis());
         record.setDistanceUnit(details.distanceUnit());
         record.setWeightKg(details.weightKg());
+
+        record.setStartTime(request.startTime());
+        record.setEndTime(request.endTime());
         return record;
     }
 
@@ -62,8 +65,12 @@ public class ExerciseRecordService {
 
         List<ExerciseSet> sets = details.sets().stream()
                 .map(this::createExerciseSet)
+                .sorted(Comparator.comparing(ExerciseSet::getOrderIndex))
                 .toList();
         record.setSets(sets);
+
+        record.setStartTime(sets.getFirst().getStartTime());
+        record.setEndTime(sets.getLast().getEndTime());
 
         return record;
     }
