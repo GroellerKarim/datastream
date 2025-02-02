@@ -67,9 +67,9 @@ public class ExerciseRecordServiceTest {
                 null,  // sets
                 10.0   // weightKg
         );
-        
+
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
-        
+
         when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
 
         // Act
@@ -88,19 +88,19 @@ public class ExerciseRecordServiceTest {
         // Arrange
         ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
         List<ExerciseSetRequest> setRequests = List.of(
-            new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, 50.0, 0)
+                new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, 0, 50.0, 0)
         );
-        
+
         val details = new ExerciseRecordDetailsRequest(
-            null,  // distance
-            null,  // distanceUnit
-            null,  // distancePerUnit
-            setRequests,
-            75.0   // weightKg
+                null,  // distance
+                null,  // distanceUnit
+                null,  // distancePerUnit
+                setRequests,
+                75.0   // weightKg
         );
-        
+
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
-        
+
         when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
 
         // Act
@@ -118,7 +118,7 @@ public class ExerciseRecordServiceTest {
     void createExerciseRecord_WhenDistanceExerciseWithMissingDetails_ThrowsNullPointerException() {
         ExerciseDefinition definition = new ExerciseDefinition("Running", ExerciseType.DISTANCE);
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), null, 1);
-        
+
         when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
 
         assertThatThrownBy(() -> exerciseRecordService.createExerciseRecord(request))
@@ -129,15 +129,15 @@ public class ExerciseRecordServiceTest {
     void createExerciseRecord_WhenDistanceExerciseWithMissingRequiredFields_ThrowsNullPointerException() {
         ExerciseDefinition definition = new ExerciseDefinition("Running", ExerciseType.DISTANCE);
         val details = new ExerciseRecordDetailsRequest(
-            null,  // distance - required but missing
-            null,  // distanceUnit - required but missing
-            null,  // distancePerUnit
-            null,  // sets
-            75.0   // weightKg
+                null,  // distance - required but missing
+                null,  // distanceUnit - required but missing
+                null,  // distancePerUnit
+                null,  // sets
+                75.0   // weightKg
         );
-        
+
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
-        
+
         when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
 
         assertThatThrownBy(() -> exerciseRecordService.createExerciseRecord(request))
@@ -148,22 +148,125 @@ public class ExerciseRecordServiceTest {
     void createExerciseRecord_WhenSetBasedExerciseWithInvalidSet_ThrowsNullPointerException() {
         ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
         List<ExerciseSetRequest> setRequests = List.of(
-            new ExerciseSetRequest(now, now.plusMinutes(1), null, null,0.0, 0) // missing required fields
+                new ExerciseSetRequest(now, now.plusMinutes(1), null, null, 0, 0.0, 0) // missing required fields
         );
-        
+
         val details = new ExerciseRecordDetailsRequest(
-            null,  // distance
-            null,  // distanceUnit
-            null,  // distancePerUnit
-            setRequests,
-            75.0   // weightKg
+                null,  // distance
+                null,  // distanceUnit
+                null,  // distancePerUnit
+                setRequests,
+                75.0   // weightKg
         );
-        
+
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
-        
+
         when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
 
         assertThatThrownBy(() -> exerciseRecordService.createExerciseRecord(request))
                 .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void createExerciseRecord_WhenFailureFalseAndPartialsGreaterThanZero_SetsPartialsToNull() {
+        // Arrange
+        ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
+        List<ExerciseSetRequest> setRequests = List.of(
+                new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, 2, 50.0, 0)
+        );
+
+        val details = new ExerciseRecordDetailsRequest(
+                null, null, null, setRequests, 75.0
+        );
+        ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
+        when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
+
+        // Act
+        ExerciseRecord result = exerciseRecordService.createExerciseRecord(request);
+
+        // Assert
+        assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
+        SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
+        assertThat(setRecord.getSets().getFirst().getPartialRepetitions()).isNull();
+    }
+
+    @Test
+    void createExerciseRecord_WhenFailureFalseAndPartialsNull_KeepsPartialsNull() {
+        ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
+        List<ExerciseSetRequest> setRequests = List.of(
+                new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, null, 50.0, 0)
+        );
+
+        val details = new ExerciseRecordDetailsRequest(
+                null, null, null, setRequests, 75.0
+        );
+        ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
+        when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
+
+        ExerciseRecord result = exerciseRecordService.createExerciseRecord(request);
+
+        assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
+        SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
+        assertThat(setRecord.getSets().getFirst().getPartialRepetitions()).isNull();
+    }
+
+    @Test
+    void createExerciseRecord_WhenFailureFalseAndPartialsZero_KeepsPartialsNull() {
+        ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
+        List<ExerciseSetRequest> setRequests = List.of(
+                new ExerciseSetRequest(now, now.plusMinutes(1), false, 12, 0, 50.0, 0)
+        );
+
+        val details = new ExerciseRecordDetailsRequest(
+                null, null, null, setRequests, 75.0
+        );
+        ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
+        when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
+
+        ExerciseRecord result = exerciseRecordService.createExerciseRecord(request);
+
+        assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
+        SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
+        assertThat(setRecord.getSets().getFirst().getPartialRepetitions()).isNull();
+    }
+
+    @Test
+    void createExerciseRecord_WhenFailureTrueAndPartialsNull_KeepsPartialsNull() {
+        ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
+        List<ExerciseSetRequest> setRequests = List.of(
+                new ExerciseSetRequest(now, now.plusMinutes(1), true, 12, null, 50.0, 0)
+        );
+
+        val details = new ExerciseRecordDetailsRequest(
+                null, null, null, setRequests, 75.0
+        );
+        ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
+        when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
+
+        ExerciseRecord result = exerciseRecordService.createExerciseRecord(request);
+
+        assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
+        SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
+        assertThat(setRecord.getSets().getFirst().getPartialRepetitions()).isNull();
+    }
+
+    @Test
+    void createExerciseRecord_WhenFailureTrueAndPartialsGreaterThanZero_KeepsPartials() {
+        ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
+        List<ExerciseSetRequest> setRequests = List.of(
+                new ExerciseSetRequest(now, now.plusMinutes(1), true, 12, 2, 50.0, 0)
+        );
+
+        val details = new ExerciseRecordDetailsRequest(
+                null, null, null, setRequests, 75.0
+        );
+        ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
+        when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
+
+        ExerciseRecord result = exerciseRecordService.createExerciseRecord(request);
+
+        assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
+        SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
+        assertThat(setRecord.getSets().getFirst().getPartialRepetitions()).isEqualTo(2);
     }
 }

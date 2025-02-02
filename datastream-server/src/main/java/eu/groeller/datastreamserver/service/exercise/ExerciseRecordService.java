@@ -25,7 +25,7 @@ public class ExerciseRecordService {
         DtoUtils.checkNulls(request, List.of("exerciseDefinitionId", "startTime", "endTime", "order"));
 
         ExerciseDefinition definition = exerciseDefinitionRepository.findById(request.exerciseDefinitionId())
-            .orElseThrow(() -> new IllegalArgumentException("Exercise definition not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Exercise definition not found"));
 
         ExerciseRecord record = switch (definition.getType()) {
             case DISTANCE -> createDistanceExerciseRecord(request, definition);
@@ -48,7 +48,7 @@ public class ExerciseRecordService {
         val record = new DistanceExerciseRecord();
         record.setExerciseDefinition(definition);
         record.setDistance(details.distance());
-        record.setDuration(Duration.between(request.startTime(),request.endTime()).toMillis());
+        record.setDuration(Duration.between(request.startTime(), request.endTime()).toMillis());
         record.setDistanceUnit(details.distanceUnit());
         record.setWeightKg(details.weightKg());
         return record;
@@ -61,10 +61,10 @@ public class ExerciseRecordService {
         record.setExerciseDefinition(definition);
 
         List<ExerciseSet> sets = details.sets().stream()
-            .map(this::createExerciseSet)
-            .toList();
+                .map(this::createExerciseSet)
+                .toList();
         record.setSets(sets);
-        
+
         return record;
     }
 
@@ -78,6 +78,12 @@ public class ExerciseRecordService {
         set.setRepetitions(request.repetitions());
         set.setWeightKg(request.weightKg());
         set.setOrderIndex(request.order());
+
+        Integer partials = request.partialRepetitions();
+        if (!request.failure())
+            partials = null;
+
+        set.setPartialRepetitions(partials);
         return set;
     }
 }
