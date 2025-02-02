@@ -5,10 +5,10 @@ import java.time.OffsetDateTime;
 public record ExerciseSetRequest(
         OffsetDateTime startTime,
         OffsetDateTime endTime,
-        Boolean failure,
+        Boolean isFailure,
         Integer repetitions,
         Integer partialRepetitions,
-        Double weightKg,
+        Double weight,
         Integer order
 ) {
 }

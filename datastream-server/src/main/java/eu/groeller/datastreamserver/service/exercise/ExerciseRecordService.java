@@ -5,6 +5,7 @@ import eu.groeller.datastreamserver.persistence.exercise.ExerciseDefinitionRepos
 import eu.groeller.datastreamserver.persistence.exercise.ExerciseRecordRepository;
 import eu.groeller.datastreamserver.presentation.request.exercise.ExerciseRecordRequest;
 import eu.groeller.datastreamserver.presentation.request.exercise.ExerciseSetRequest;
+import eu.groeller.datastreamserver.service.exceptions.DSIllegalArgumentException;
 import eu.groeller.datastreamserver.service.utils.DtoUtils;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class ExerciseRecordService {
         DtoUtils.checkNulls(request, List.of("exerciseDefinitionId", "startTime", "endTime", "order"));
 
         ExerciseDefinition definition = exerciseDefinitionRepository.findById(request.exerciseDefinitionId())
-                .orElseThrow(() -> new IllegalArgumentException("Exercise definition not found"));
+                .orElseThrow(() -> new DSIllegalArgumentException("Exercise definition not found"));
 
         ExerciseRecord record = switch (definition.getType()) {
             case DISTANCE -> createDistanceExerciseRecord(request, definition);
@@ -76,18 +77,18 @@ public class ExerciseRecordService {
     }
 
     private ExerciseSet createExerciseSet(@NonNull ExerciseSetRequest request) {
-        DtoUtils.checkNulls(request, List.of("startTime", "endTime", "failure", "order"));
+        DtoUtils.checkNulls(request, List.of("startTime", "endTime", "isFailure", "order"));
 
         var set = new ExerciseSet();
         set.setStartTime(request.startTime());
         set.setEndTime(request.endTime());
-        set.setFailure(request.failure());
+        set.setFailure(request.isFailure());
         set.setRepetitions(request.repetitions());
-        set.setWeightKg(request.weightKg());
+        set.setWeightKg(request.weight());
         set.setOrderIndex(request.order());
 
         Integer partials = request.partialRepetitions();
-        if (!request.failure())
+        if (!request.isFailure())
             partials = null;
 
         set.setPartialRepetitions(partials);

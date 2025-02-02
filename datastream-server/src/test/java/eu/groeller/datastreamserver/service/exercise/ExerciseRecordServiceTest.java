@@ -6,6 +6,7 @@ import eu.groeller.datastreamserver.persistence.exercise.ExerciseRecordRepositor
 import eu.groeller.datastreamserver.presentation.request.exercise.ExerciseRecordDetailsRequest;
 import eu.groeller.datastreamserver.presentation.request.exercise.ExerciseRecordRequest;
 import eu.groeller.datastreamserver.presentation.request.exercise.ExerciseSetRequest;
+import eu.groeller.datastreamserver.service.exceptions.DSIllegalArgumentException;
 import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +54,7 @@ public class ExerciseRecordServiceTest {
         when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> exerciseRecordService.createExerciseRecord(request))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(DSIllegalArgumentException.class)
                 .hasMessageContaining("Exercise definition not found");
     }
 
@@ -66,7 +67,7 @@ public class ExerciseRecordServiceTest {
                 DistanceUnit.KILOMETERS,
                 null,  // distancePerUnit
                 null,  // sets
-                10.0   // weightKg
+                10.0   // weight
         );
 
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
@@ -97,7 +98,7 @@ public class ExerciseRecordServiceTest {
                 null,  // distanceUnit
                 null,  // distancePerUnit
                 setRequests,
-                75.0   // weightKg
+                75.0   // weight
         );
 
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
@@ -134,7 +135,7 @@ public class ExerciseRecordServiceTest {
                 null,  // distanceUnit - required but missing
                 null,  // distancePerUnit
                 null,  // sets
-                75.0   // weightKg
+                75.0   // weight
         );
 
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
@@ -157,7 +158,7 @@ public class ExerciseRecordServiceTest {
                 null,  // distanceUnit
                 null,  // distancePerUnit
                 setRequests,
-                75.0   // weightKg
+                75.0   // weight
         );
 
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, now, now.plusMinutes(30), details, 1);
@@ -275,7 +276,7 @@ public class ExerciseRecordServiceTest {
     void createExerciseRecord_WhenMultipleSets_OrdersSetsAndSetsCorrectStartEndTimes() {
         // Arrange
         ExerciseDefinition definition = new ExerciseDefinition("Bench Press", ExerciseType.SETS_REPS);
-        
+
         // Create sets in random order
         List<ExerciseSetRequest> setRequests = List.of(
                 new ExerciseSetRequest(now.plusMinutes(2), now.plusMinutes(3), false, 12, null, 50.0, 2),
@@ -296,7 +297,7 @@ public class ExerciseRecordServiceTest {
         // Assert
         assertThat(result).isInstanceOf(SetBasedExerciseRecord.class);
         SetBasedExerciseRecord setRecord = (SetBasedExerciseRecord) result;
-        
+
         // Verify sets are ordered correctly
         List<ExerciseSet> orderedSets = setRecord.getSets();
         assertThat(orderedSets).hasSize(4);
@@ -306,7 +307,7 @@ public class ExerciseRecordServiceTest {
 
         // Verify start time is from first set
         assertThat(setRecord.getStartTime()).isEqualTo(now);
-        
+
         // Verify end time is from last set
         assertThat(setRecord.getEndTime()).isEqualTo(now.plusMinutes(5));
     }
@@ -317,13 +318,13 @@ public class ExerciseRecordServiceTest {
         ExerciseDefinition definition = new ExerciseDefinition("Running", ExerciseType.DISTANCE);
         val startTime = now;
         val endTime = now.plusHours(1);  // 1 hour run
-        
+
         val details = new ExerciseRecordDetailsRequest(
                 10.0,  // distance
                 DistanceUnit.KILOMETERS,
                 null,  // distancePerUnit
                 null,  // sets
-                null   // weightKg
+                null   // weight
         );
 
         ExerciseRecordRequest request = new ExerciseRecordRequest(1L, startTime, endTime, details, 1);
@@ -335,11 +336,11 @@ public class ExerciseRecordServiceTest {
         // Assert
         assertThat(result).isInstanceOf(DistanceExerciseRecord.class);
         DistanceExerciseRecord distanceRecord = (DistanceExerciseRecord) result;
-        
+
         // Verify start and end times are set correctly
         assertThat(distanceRecord.getStartTime()).isEqualTo(startTime);
         assertThat(distanceRecord.getEndTime()).isEqualTo(endTime);
-        
+
         // Verify duration is calculated correctly (in milliseconds)
         assertThat(distanceRecord.getDuration()).isEqualTo(Duration.between(startTime, endTime).toMillis());
     }

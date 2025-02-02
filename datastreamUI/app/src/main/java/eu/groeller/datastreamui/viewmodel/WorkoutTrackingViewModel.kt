@@ -1,9 +1,11 @@
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.groeller.datastreamui.data.exercise.ExerciseRepository
+import eu.groeller.datastreamui.data.model.CreateWorkoutRequest
 import eu.groeller.datastreamui.data.model.ExerciseDefinition
 import eu.groeller.datastreamui.data.model.ExerciseType
 import eu.groeller.datastreamui.data.model.WorkoutType
+import eu.groeller.datastreamui.data.serializer.OffsetDateTimeSerializer
 import eu.groeller.datastreamui.data.workout.WorkoutRepository
 import eu.groeller.datastreamui.screens.workout.SetData
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import java.time.OffsetDateTime
 
 data class WorkoutTrackingState(
@@ -21,6 +24,7 @@ data class WorkoutTrackingState(
     val workoutTypes: List<WorkoutType> = emptyList(),
     val selectedWorkoutType: WorkoutType? = null,
     val currentExercise: ExerciseDefinition? = null,
+    val previousSetEndTime: OffsetDateTime? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -34,6 +38,19 @@ class WorkoutTrackingViewModel(
 
     init {
         loadWorkoutTypes()
+    }
+
+    fun createWorkout() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val workout = CreateWorkoutRequest(
+                _uiState.value.selectedWorkoutType!!.name,
+                _uiState.value.exercises,
+                _uiState.value.startTime,
+                OffsetDateTime.now()
+            )
+            workoutRepository.createWorkout(workout)
+        }
     }
 
     private fun loadWorkoutTypes() {
@@ -155,14 +172,14 @@ class WorkoutTrackingViewModel(
         _uiState.value = WorkoutTrackingState()
     }
 
-    fun recordExercise(sets: List<SetData>) {
+    fun recordExercise(sets: List<SetData>, startTime: OffsetDateTime) {
         val currentExercise = _uiState.value.currentExercise
 
         if (currentExercise != null && sets.isNotEmpty()) {
             val exerciseRecord = ExerciseRecordRequest(
                 name = currentExercise.name,
                 exerciseDefinitionId = currentExercise.id,
-                startTime = _uiState.value.startTime,
+                startTime = startTime,
                 endTime = OffsetDateTime.now(),
                 details = ExerciseRecordDetailsRequest(sets),
                 order = _uiState.value.exercises.size + 1
@@ -170,6 +187,7 @@ class WorkoutTrackingViewModel(
 
             _uiState.update { currentState ->
                 currentState.copy(
+                    previousSetEndTime = exerciseRecord.details.sets.lastOrNull()?.endTime,
                     exercises = currentState.exercises.plus(exerciseRecord),
                     currentExercise = null,
                 )
@@ -178,15 +196,20 @@ class WorkoutTrackingViewModel(
     }
 }
 
+// TODO: Tidy up. Remove Request object from composable. Only accessible in ViewModel
+@Serializable
 data class ExerciseRecordRequest(
     val name: String,
     val exerciseDefinitionId: Long,
+    @Serializable(with = OffsetDateTimeSerializer::class)
     val startTime: OffsetDateTime,
+    @Serializable(with = OffsetDateTimeSerializer::class)
     val endTime: OffsetDateTime,
     val details: ExerciseRecordDetailsRequest,
     val order: Int
 )
 
+@Serializable
 data class ExerciseRecordDetailsRequest(
     val sets: List<SetData>
 )

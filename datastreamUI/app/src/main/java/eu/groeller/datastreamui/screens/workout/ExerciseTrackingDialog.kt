@@ -42,8 +42,9 @@ fun ExerciseTrackingDialog(
     exercise: ExerciseDefinition,
     previousSetTime: OffsetDateTime?,
     onDismiss: () -> Unit,
-    onExerciseCompleted: (List<SetData>) -> Unit
+    onExerciseCompleted: (List<SetData>, OffsetDateTime) -> Unit
 ) {
+    val startTime = OffsetDateTime.now()
     // Set Data
     var weight by remember { mutableStateOf("") }
     var reps by remember { mutableStateOf("") }
@@ -194,11 +195,12 @@ fun ExerciseTrackingDialog(
                                 onClick = {
                                     val newSet = SetData(
                                         weight = weight.toFloatOrNull() ?: 0f,
-                                        reps = reps.toIntOrNull() ?: 0,
+                                        repetitions = reps.toIntOrNull() ?: 0,
                                         isFailure = isFailure,
-                                        partialReps = if (isFailure) partialReps.toIntOrNull() else null,
+                                        partialRepetitions = if (isFailure) partialReps.toIntOrNull() else null,
                                         startTime = currentSetStartTime!!,
-                                        endTime = currentEndTime!!
+                                        endTime = currentEndTime!!,
+                                        order = completedSets.size
                                     )
                                     completedSets = completedSets + newSet
                                     currentSetStartTime = null
@@ -292,12 +294,12 @@ fun ExerciseTrackingDialog(
                                     modifier = Modifier.weight(1f)
                                 )
                                 Text(
-                                    text = "${set.reps}",
+                                    text = "${set.repetitions}",
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
                                 Text(
-                                    text = set.partialReps?.toString() ?: "-",
+                                    text = set.partialRepetitions?.toString() ?: "-",
                                     style = MaterialTheme.typography.bodyMedium,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -338,7 +340,7 @@ fun ExerciseTrackingDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onExerciseCompleted(completedSets) },
+                onClick = { onExerciseCompleted(completedSets, startTime) },
                 enabled = completedSets.isNotEmpty()
             ) {
                 Text("Complete Exercise")

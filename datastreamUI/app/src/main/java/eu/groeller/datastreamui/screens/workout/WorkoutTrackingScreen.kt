@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import eu.groeller.datastreamui.data.serializer.OffsetDateTimeSerializer
+import kotlinx.serialization.Serializable
 import java.time.OffsetDateTime
 
 @Composable
@@ -127,7 +129,10 @@ fun WorkoutTrackingScreen(
 
             // Complete workout button
             Button(
-                onClick = onWorkoutComplete,
+                onClick = {
+                    viewModel.createWorkout()
+                    onWorkoutComplete.invoke()
+                },
                 enabled = uiState.exercises.isNotEmpty()
             ) {
                 Text("Complete")
@@ -178,10 +183,10 @@ fun WorkoutTrackingScreen(
     uiState.currentExercise?.let { exercise ->
         ExerciseTrackingDialog(
             exercise = exercise,
-            previousSetTime = uiState.exercises.lastOrNull()?.endTime,
+            previousSetTime = uiState.previousSetEndTime,
             onDismiss = { viewModel.selectExercise(null) },
-            onExerciseCompleted = { sets ->
-                viewModel.recordExercise(sets)
+            onExerciseCompleted = { sets, startTime ->
+                viewModel.recordExercise(sets, startTime)
             }
         )
     }
@@ -213,13 +218,18 @@ private fun CancelWorkoutDialog(
 }
 
 // Data class for set information
+// TODO: Tidy up, don't use compose state tracker for DTO
+@Serializable
 data class SetData(
     val weight: Float,
-    val reps: Int,
-    val partialReps: Int?,
+    val repetitions: Int,
+    val partialRepetitions: Int?,
     val isFailure: Boolean,
+    @Serializable(with = OffsetDateTimeSerializer::class)
     val startTime: OffsetDateTime,
-    val endTime: OffsetDateTime
+    @Serializable(with = OffsetDateTimeSerializer::class)
+    val endTime: OffsetDateTime,
+    val order: Int
 )
 
 @Composable
@@ -247,8 +257,8 @@ private fun CompletedExerciseItem(exercise: ExerciseRecordRequest) {
                 )
                 Text(
                     text = createDurationString(
-                        (exercise.endTime.toInstant().toEpochMilli() -
-                                exercise.startTime.toInstant().toEpochMilli()) / 1000
+                        (exercise.details.sets.first().startTime.toInstant().toEpochMilli() -
+                                exercise.details.sets.last().endTime.toInstant().toEpochMilli())
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -288,7 +298,7 @@ private fun CompletedExerciseItem(exercise: ExerciseRecordRequest) {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "${set.weight}kg × ${set.reps}",
+                            text = "${set.weight}kg × ${set.repetitions}",
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(horizontal = 8.dp)
                         )
