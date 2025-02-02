@@ -216,6 +216,7 @@ private fun CancelWorkoutDialog(
 data class SetData(
     val weight: Float,
     val reps: Int,
+    val partialReps: Int?,
     val isFailure: Boolean,
     val startTime: OffsetDateTime,
     val endTime: OffsetDateTime

@@ -54,6 +54,8 @@ fun ExerciseTrackingDialog(
 
     var isSetInProgress by remember { mutableStateOf(false) }
 
+    // Add partialReps state
+    var partialReps by remember { mutableStateOf("") }
 
     // Effect to update rest time periodically
     LaunchedEffect(lastSetTime) {
@@ -140,7 +142,7 @@ fun ExerciseTrackingDialog(
                                 modifier = Modifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                             )
-
+                            
                             OutlinedTextField(
                                 value = reps,
                                 onValueChange = { reps = it },
@@ -148,12 +150,21 @@ fun ExerciseTrackingDialog(
                                 modifier = Modifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                             )
+
+                            OutlinedTextField(
+                                value = partialReps,
+                                onValueChange = { partialReps = it },
+                                label = { Text("Partial") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                enabled = isFailure  // Only enable input when set is marked as failed
+                            )
                         }
 
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 16.dp),
+                                .padding(bottom = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -167,25 +178,33 @@ fun ExerciseTrackingDialog(
                                     onCheckedChange = { isFailure = it }
                                 )
                             }
+                        }
 
-                            // Complete Set button
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
                             Button(
                                 onClick = {
                                     val newSet = SetData(
                                         weight = weight.toFloatOrNull() ?: 0f,
                                         reps = reps.toIntOrNull() ?: 0,
                                         isFailure = isFailure,
+                                        partialReps = if (isFailure) partialReps.toIntOrNull() else null,
                                         startTime = currentSetStartTime!!,
-                                        endTime = currentEndTime!!  // Use stored end time
+                                        endTime = currentEndTime!!
                                     )
                                     completedSets = completedSets + newSet
                                     currentSetStartTime = null
                                     currentEndTime = null
                                     weight = ""
                                     reps = ""
+                                    partialReps = ""
                                     isFailure = false
                                 },
-                                enabled = weight.isNotBlank() && reps.isNotBlank()
+                                enabled = weight.isNotBlank() && reps.isNotBlank() && (!isFailure || partialReps.isNotBlank())
                             ) {
                                 Text("Complete Set")
                             }
