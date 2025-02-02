@@ -7,10 +7,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -142,7 +146,7 @@ fun ExerciseTrackingDialog(
                                 modifier = Modifier.weight(1f),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                             )
-                            
+
                             OutlinedTextField(
                                 value = reps,
                                 onValueChange = { reps = it },
@@ -221,6 +225,52 @@ fun ExerciseTrackingDialog(
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
+                    // Headers
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Set",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "Weight",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "Reps",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "Partial",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        /*
+                                                Text(
+                                                    text = "Duration",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                                Text(
+                                                    text = "Rest",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                        */
+                        Text(
+                            text = "Failed",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Divider(modifier = Modifier.padding(vertical = 4.dp))
+
                     LazyColumn(
                         modifier = Modifier.weight(1f, false),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -228,23 +278,58 @@ fun ExerciseTrackingDialog(
                         items(completedSets) { set ->
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Set ${completedSets.indexOf(set) + 1}:",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    text = "${completedSets.indexOf(set) + 1}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
                                 )
                                 Text(
-                                    text = "${set.weight}kg × ${set.reps}",
-                                    style = MaterialTheme.typography.bodyMedium
+                                    text = "${set.weight}kg",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
                                 )
-                                if (set.isFailure) {
-                                    Text(
-                                        text = "Failed",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
+                                Text(
+                                    text = "${set.reps}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = set.partialReps?.toString() ?: "-",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                /*
+                                                                Text(
+                                                                    text = createDurationTabString(
+                                                                        (set.endTime.toInstant()
+                                                                            .toEpochMilli() - set.startTime.toInstant()
+                                                                            .toEpochMilli()) / 1000
+                                                                    ),
+                                                                    style = MaterialTheme.typography.bodyMedium,
+                                                                    modifier = Modifier.weight(1f)
+                                                                )
+                                                                Text(
+                                                                    text = if (completedSets.indexOf(set) < completedSets.size - 1) {
+                                                                        val nextSet = completedSets[completedSets.indexOf(set) + 1]
+                                                                        createDurationTabString(
+                                                                            (nextSet.startTime.toInstant()
+                                                                                .toEpochMilli() - set.endTime.toInstant()
+                                                                                .toEpochMilli()) / 1000
+                                                                        )
+                                                                    } else "-",
+                                                                    style = MaterialTheme.typography.bodyMedium,
+                                                                    modifier = Modifier.weight(1f)
+                                                                )
+                                */
+                                Icon(
+                                    imageVector = if (set.isFailure) Icons.Default.Check else Icons.Default.Clear,
+                                    contentDescription = if (set.isFailure) "Failed" else "Not Failed",
+                                    tint = if (set.isFailure) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                                )
                             }
                         }
                     }
@@ -265,4 +350,18 @@ fun ExerciseTrackingDialog(
             }
         }
     )
+}
+
+private fun createDurationTabString(seconds: Long): String {
+    if (seconds < 60) {
+        return "${seconds}s"
+    }
+
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    return if (remainingSeconds > 0) {
+        "${minutes}m ${remainingSeconds}s"
+    } else {
+        "${minutes}m"
+    }
 } 
