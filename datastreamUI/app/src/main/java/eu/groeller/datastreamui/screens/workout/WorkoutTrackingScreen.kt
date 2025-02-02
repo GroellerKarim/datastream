@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.OffsetDateTime
 
 @Composable
 fun WorkoutTrackingScreen(
@@ -177,7 +178,7 @@ fun WorkoutTrackingScreen(
     uiState.currentExercise?.let { exercise ->
         ExerciseTrackingDialog(
             exercise = exercise,
-            previousSetTime = uiState.exercises.lastOrNull()?.endTime?.toInstant()?.toEpochMilli(),
+            previousSetTime = uiState.exercises.lastOrNull()?.endTime,
             onDismiss = { viewModel.selectExercise(null) },
             onExerciseCompleted = { sets ->
                 viewModel.recordExercise(sets)
@@ -216,7 +217,8 @@ data class SetData(
     val weight: Float,
     val reps: Int,
     val isFailure: Boolean,
-    val timestamp: Long = System.currentTimeMillis()
+    val startTime: OffsetDateTime,
+    val endTime: OffsetDateTime
 )
 
 @Composable

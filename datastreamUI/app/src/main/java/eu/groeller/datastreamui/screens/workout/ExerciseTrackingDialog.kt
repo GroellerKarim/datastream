@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -17,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,11 +30,13 @@ import eu.groeller.datastreamui.data.model.ExerciseDefinition
 import eu.groeller.datastreamui.screens.workout.SetData
 import eu.groeller.datastreamui.screens.workout.createDurationString
 import kotlinx.coroutines.delay
+import java.time.OffsetDateTime
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExerciseTrackingDialog(
     exercise: ExerciseDefinition,
-    previousSetTime: Long?,
+    previousSetTime: OffsetDateTime?,
     onDismiss: () -> Unit,
     onExerciseCompleted: (List<SetData>) -> Unit
 ) {
@@ -42,16 +44,29 @@ fun ExerciseTrackingDialog(
     var reps by remember { mutableStateOf("") }
     var isFailure by remember { mutableStateOf(false) }
     var completedSets by remember { mutableStateOf<List<SetData>>(emptyList()) }
-    
-    var lastSetTime by remember { mutableStateOf<Long?>(previousSetTime) }
+
+    var lastSetTime by remember { mutableStateOf<OffsetDateTime?>(previousSetTime) }
     var restTime by remember { mutableStateOf<Long?>(null) }
-    
+    var currentSetStartTime by remember { mutableStateOf<OffsetDateTime?>(null) }
+    var isSetInProgress by remember { mutableStateOf(false) }
+
+    var setDuration by remember { mutableStateOf<Long?>(null) }
+
     // Effect to update rest time periodically
     LaunchedEffect(lastSetTime) {
-        while(lastSetTime != null) {
+        while (lastSetTime != null) {
             Log.d("ExerciseTrackingDialog", "Updating rest time")
-            restTime = System.currentTimeMillis() - lastSetTime!!
-            kotlinx.coroutines.delay(1000) // Update every second
+            restTime = (System.currentTimeMillis() - lastSetTime!!.toInstant().toEpochMilli())
+            delay(1000)
+        }
+    }
+
+    // Effect to update set duration while set is in progress
+    LaunchedEffect(currentSetStartTime) {
+        while (currentSetStartTime != null) {
+            setDuration =
+                (System.currentTimeMillis() - currentSetStartTime!!.toInstant().toEpochMilli())
+            delay(1000)
         }
     }
 
@@ -63,74 +78,112 @@ fun ExerciseTrackingDialog(
                     text = exercise.name,
                     style = MaterialTheme.typography.titleLarge
                 )
-                Text(
-                    text = "Rest time: ${restTime?.let { createDurationString(it) } ?: "00:00"}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (isSetInProgress) {
+                    Text(
+                        text = "Set duration: ${setDuration?.let { createDurationString(it) } ?: "00:00"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "Rest time: ${restTime?.let { createDurationString(it) } ?: "00:00"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         },
         text = {
             Column {
-                // Input Section
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = weight,
-                        onValueChange = { weight = it },
-                        label = { Text("Weight") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                    
-                    OutlinedTextField(
-                        value = reps,
-                        onValueChange = { reps = it },
-                        label = { Text("Reps") },
-                        modifier = Modifier.weight(1f),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    )
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("Failed Set")
-                        Switch(
-                            checked = isFailure,
-                            onCheckedChange = { isFailure = it }
-                        )
-                    }
-                    
+                Column {
+                    // Start/Stop Set Button
                     Button(
                         onClick = {
-                            val newSet = SetData(
-                                weight = weight.toFloatOrNull() ?: 0f,
-                                reps = reps.toIntOrNull() ?: 0,
-                                isFailure = isFailure,
-                                timestamp = System.currentTimeMillis()
-                            )
-                            completedSets = completedSets + newSet
-                            lastSetTime = System.currentTimeMillis()
-                            weight = ""
-                            reps = ""
-                            isFailure = false
+                            if (!isSetInProgress) {
+                                // Start set
+                                currentSetStartTime = OffsetDateTime.now()
+                                isSetInProgress = true
+                                // Clear any previous input
+                                weight = ""
+                                reps = ""
+                                isFailure = false
+                            } else {
+                                // Stop set
+                                isSetInProgress = false
+                            }
                         },
-                        enabled = weight.isNotBlank() && reps.isNotBlank()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
                     ) {
-                        Text("Complete Set")
+                        Text(if (isSetInProgress) "Stop Set" else "Start Set")
+                    }
+
+                    // Input Section - only visible after set is stopped
+                    if (!isSetInProgress && currentSetStartTime != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = weight,
+                                onValueChange = { weight = it },
+                                label = { Text("Weight") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+
+                            OutlinedTextField(
+                                value = reps,
+                                onValueChange = { reps = it },
+                                label = { Text("Reps") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text("Failed Set")
+                                Switch(
+                                    checked = isFailure,
+                                    onCheckedChange = { isFailure = it }
+                                )
+                            }
+
+                            // Complete Set button
+                            Button(
+                                onClick = {
+                                    val newSet = SetData(
+                                        weight = weight.toFloatOrNull() ?: 0f,
+                                        reps = reps.toIntOrNull() ?: 0,
+                                        isFailure = isFailure,
+                                        startTime = currentSetStartTime!!,
+                                        endTime = OffsetDateTime.now()
+                                    )
+                                    completedSets = completedSets + newSet
+                                    lastSetTime = OffsetDateTime.now()
+                                    currentSetStartTime = null
+                                    weight = ""
+                                    reps = ""
+                                    isFailure = false
+                                },
+                                enabled = weight.isNotBlank() && reps.isNotBlank()
+                            ) {
+                                Text("Complete Set")
+                            }
+                        }
                     }
                 }
 
@@ -142,7 +195,7 @@ fun ExerciseTrackingDialog(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    
+
                     LazyColumn(
                         modifier = Modifier.weight(1f, false),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
