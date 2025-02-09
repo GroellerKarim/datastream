@@ -11,8 +11,8 @@
     <groupId>eu.groeller</groupId>
     <artifactId>ds-core</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>datastream-server</name>
-    <description>datastream-server</description>
+    <name>ds-core</name>
+    <description>Dataserver of the Datastream Application</description>
 
     <properties>
         <java.version>23</java.version>
