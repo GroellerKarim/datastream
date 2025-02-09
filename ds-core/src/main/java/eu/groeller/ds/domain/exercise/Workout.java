@@ -41,7 +41,7 @@ public class Workout extends AbstractEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "workout_id")
-    private List<ExerciseRecord> exercises;
+    private List<ExerciseRecord> exercises = new ArrayList<>();
 
     @Column(name = "average_rest_time")
     private Double averageRestTime;

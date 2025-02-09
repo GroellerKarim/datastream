@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -47,6 +48,7 @@ public class WorkoutController {
     }
 
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<Slice<WorkoutResponse>> getWorkouts(@AuthenticationPrincipal CustomUserDetails userDetails, Pageable pageable) {
         log.info("Retrieving workouts for user: {}, with pageable [{}]", userDetails.getUsername(), pageable);
 
