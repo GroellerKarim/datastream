@@ -63,13 +63,15 @@ fun WorkoutScreen(
                     .border(BorderStroke(2.dp, Color.Black), shape = RoundedCornerShape(9.dp))
                     .padding(5.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceEvenly
+                verticalArrangement = Arrangement.Top
             ) {
-                val workoutIterator = workouts.iterator()
-                while (workoutIterator.hasNext()) {
-                    val workout = workoutIterator.next()
+                val recentWorkouts = workouts.take(5)
+                recentWorkouts.forEachIndexed { index, workout ->
                     Row(
-                        modifier = Modifier.fillMaxWidth().fillMaxHeight().weight(1f).padding(2.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.2f)
+                            .padding(2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         TextButton(
@@ -87,8 +89,11 @@ fun WorkoutScreen(
                             }
                         }
                     }
-                    if (workoutIterator.hasNext())
-                        HorizontalDivider(thickness = 2.dp, color = Color.Gray)
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 2.dp,
+                        color = Color.Gray
+                    )
                 }
             }
         }
