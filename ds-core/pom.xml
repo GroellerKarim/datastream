@@ -10,7 +10,7 @@
     </parent>
     <groupId>eu.groeller</groupId>
     <artifactId>ds-core</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>ds-core</name>
     <description>Dataserver of the Datastream Application</description>
 
