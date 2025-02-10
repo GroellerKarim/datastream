@@ -14,6 +14,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+  dependency-graph: write
+
 jobs:
   build:
 
