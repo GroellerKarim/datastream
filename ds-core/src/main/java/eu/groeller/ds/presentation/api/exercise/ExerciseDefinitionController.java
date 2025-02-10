@@ -30,7 +30,7 @@ public class ExerciseDefinitionController {
         val def = exerciseDefinitionService.createExerciseDefinition(request);
 
         log.trace("Created Exercise Definition, building response");
-        return ResponseEntity.ok(new ExerciseDefinitionResponse(def));
+        return ResponseEntity.status(201).body(new ExerciseDefinitionResponse(def));
     }
 
     @GetMapping("/all")

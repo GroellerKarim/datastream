@@ -45,7 +45,7 @@ public class WorkoutService {
         val workoutType = workoutTypeRepository.findByName(request.type())
                 .orElseThrow(() -> {
                     log.warn("No WorkoutType with name [{}] found", request.type());
-                    return new RuntimeException("Kek");
+                    return new DSIllegalArgumentException("Workout type not found: " + request.type());
                 });
 
         // Create exercise records
@@ -70,8 +70,12 @@ public class WorkoutService {
     public WorkoutType createWorkoutType(String name) {
         log.info("Creating workout-type with name [{}]", name);
 
-        val createdWorkoutType = workoutTypeRepository.save(new WorkoutType(name));
-        return createdWorkoutType;
+        if (workoutTypeRepository.findByName(name).isPresent()) {
+            log.warn("WorkoutType with name [{}] already exists", name);
+            throw new DSIllegalArgumentException("Workout type with name " + name + " already exists");
+        }
+
+        return workoutTypeRepository.save(new WorkoutType(name));
     }
 
     public List<WorkoutType> getWorkoutTypes() {
