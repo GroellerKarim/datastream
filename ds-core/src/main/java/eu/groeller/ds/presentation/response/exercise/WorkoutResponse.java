@@ -11,7 +11,7 @@ public record WorkoutResponse(
         Long durationMs,
         OffsetDateTime date,
         Set<ExerciseRecordResponse> exercises,
-        String name
+        String workoutType
 ) {
     public WorkoutResponse(Workout workout) {
         this(
