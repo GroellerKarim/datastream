@@ -35,16 +35,16 @@ public class WorkoutController {
         WorkoutResponse response = new WorkoutResponse(workoutService.createWorkout(userDetails.getUser(), request));
 
         log.info("Successfully created workout with ID: {} for user: {}", response.workoutId(), userDetails.getUsername());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(201).body(response);
     }
 
     @PostMapping("/workout-type")
-    public ResponseEntity<CreateWorkoutTypeRequest> createWorkoutType(@RequestBody CreateWorkoutTypeRequest dto) {
+    public ResponseEntity<WorkoutTypeResponse> createWorkoutType(@RequestBody CreateWorkoutTypeRequest dto) {
         log.info("Create WorkoutType Request with name [{}]", dto);
 
         val type = workoutService.createWorkoutType(dto.name());
 
-        return ResponseEntity.ok(new CreateWorkoutTypeRequest(type.getName()));
+        return ResponseEntity.status(201).body(new WorkoutTypeResponse(type));
     }
 
     @GetMapping
