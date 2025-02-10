@@ -3,12 +3,7 @@ package eu.groeller.ds.presentation.api.exercise;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.groeller.ds.config.TestContainersConfig;
 import eu.groeller.ds.domain.exercise.ExerciseType;
-import eu.groeller.ds.presentation.request.exercise.CreateExerciseDefinitionRequest;
-import eu.groeller.ds.presentation.request.exercise.CreateWorkoutRequest;
-import eu.groeller.ds.presentation.request.exercise.CreateWorkoutTypeRequest;
-import eu.groeller.ds.presentation.request.exercise.ExerciseRecordRequest;
-import eu.groeller.ds.presentation.request.exercise.ExerciseRecordDetailsRequest;
-import eu.groeller.ds.presentation.request.exercise.ExerciseSetRequest;
+import eu.groeller.ds.presentation.request.exercise.*;
 import eu.groeller.ds.presentation.request.user.UserRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,8 +42,8 @@ class WorkoutControllerIntegrationTest {
         // Create a test user and get authentication token
         UserRequest createRequest = new UserRequest("testuser", "test@example.com", "password123");
         MvcResult result = mockMvc.perform(post("/api/v1/users/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
                 .andReturn();
 
         if (result.getResponse().getStatus() != 201) {
@@ -58,8 +53,8 @@ class WorkoutControllerIntegrationTest {
 
         // Login and get token
         mockMvc.perform(post("/api/v1/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new eu.groeller.ds.presentation.request.user.UserLoginRequest("test@example.com", "password123"))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new eu.groeller.ds.presentation.request.user.UserLoginRequest("test@example.com", "password123"))))
                 .andExpect(status().isOk())
                 .andDo(mvcResult -> {
                     String response = mvcResult.getResponse().getContentAsString();
@@ -181,4 +176,5 @@ class WorkoutControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].name").exists());
     }
-} 
+
+}
