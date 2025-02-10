@@ -113,7 +113,7 @@ public class SecurityTests {
                 });
     }
 
-    @ParameterizedTest(name = "Testing {0}")
+    @ParameterizedTest()
     @MethodSource("provideEndpoints")
     void endpoint_WhenNotAuthenticated_ShouldReturn401(EndpointInfo endpointInfo) throws Exception {
         String pattern = replacePathVariables(endpointInfo.pattern());
@@ -178,7 +178,7 @@ public class SecurityTests {
         return endpoints.stream();
     }
 
-    @ParameterizedTest(name = "Testing public endpoint {0}")
+    @ParameterizedTest()
     @MethodSource("providePublicEndpoints")
     void publicEndpoint_WhenNotAuthenticated_ShouldNotReturn401(EndpointInfo endpointInfo) throws Exception {
         String pattern = replacePathVariables(endpointInfo.pattern());
