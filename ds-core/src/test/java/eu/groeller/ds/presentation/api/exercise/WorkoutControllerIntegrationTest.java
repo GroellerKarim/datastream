@@ -40,7 +40,7 @@ class WorkoutControllerIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         // Create a test user and get authentication token
-        UserRequest createRequest = new UserRequest("testuser", "test@example.com", "password123");
+        UserRequest createRequest = new UserRequest("testuser", "test@workout.com", "password123");
         MvcResult result = mockMvc.perform(post("/api/v1/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
@@ -65,7 +65,7 @@ class WorkoutControllerIntegrationTest {
     @Test
     void createWorkoutType_ShouldCreateNewWorkoutType() throws Exception {
         // Arrange
-        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        String uniqueId = UUID.randomUUID().toString();
         CreateWorkoutTypeRequest request = new CreateWorkoutTypeRequest("Push Day " + uniqueId);
 
         // Act & Assert
@@ -82,7 +82,7 @@ class WorkoutControllerIntegrationTest {
     void createWorkout_ShouldCreateNewWorkout() throws Exception {
         // Arrange
         // First create a workout type
-        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        String uniqueId = UUID.randomUUID().toString();
         CreateWorkoutTypeRequest typeRequest = new CreateWorkoutTypeRequest("Pull Day " + uniqueId);
         MvcResult workoutTypeResult = mockMvc.perform(post("/api/v1/workouts/workout-type")
                         .header("Authorization", "Bearer " + authToken)
@@ -162,7 +162,7 @@ class WorkoutControllerIntegrationTest {
     void getWorkoutTypes_ShouldReturnWorkoutTypes() throws Exception {
         // Arrange
         // Create a workout type first
-        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        String uniqueId = UUID.randomUUID().toString();
         CreateWorkoutTypeRequest request = new CreateWorkoutTypeRequest("Legs Day " + uniqueId);
         mockMvc.perform(post("/api/v1/workouts/workout-type")
                         .header("Authorization", "Bearer " + authToken)

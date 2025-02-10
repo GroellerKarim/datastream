@@ -39,22 +39,22 @@ class ExerciseDefinitionControllerIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         // Create a test user with unique username and email
-        String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+        String uniqueId = UUID.randomUUID().toString();
         UserRequest createRequest = new UserRequest(
                 "testuser_" + uniqueId,
-                "test_" + uniqueId + "@example.com",
+                "test_" + uniqueId + "@exerciseDefinition.com",
                 "password123"
         );
 
         mockMvc.perform(post("/api/v1/users/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createRequest)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated());
 
         // Login and get token
         mockMvc.perform(post("/api/v1/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(new eu.groeller.ds.presentation.request.user.UserLoginRequest(createRequest.email(), "password123"))))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new eu.groeller.ds.presentation.request.user.UserLoginRequest(createRequest.email(), createRequest.password()))))
                 .andExpect(status().isOk())
                 .andDo(mvcResult -> {
                     String response = mvcResult.getResponse().getContentAsString();

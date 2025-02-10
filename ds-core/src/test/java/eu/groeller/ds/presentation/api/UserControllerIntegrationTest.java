@@ -30,7 +30,12 @@ class UserControllerIntegrationTest {
     @Test
     void createUser_ShouldCreateNewUser() throws Exception {
         // Arrange
-        UserRequest request = new UserRequest("testuser", "test@example.com", "password123");
+        String uniqueId = java.util.UUID.randomUUID().toString();
+        UserRequest request = new UserRequest(
+                "testuser_" + uniqueId,
+                "test_" + uniqueId + "@user.com",
+                "password123"
+        );
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/users/register")
