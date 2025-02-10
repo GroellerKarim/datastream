@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI with Maven
+name: Maven Build
 
 on:
   push:
@@ -20,9 +20,8 @@ permissions:
 
 jobs:
   build:
-
+    name: Maven Build and Test
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 23
