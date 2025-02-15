@@ -13,6 +13,7 @@ import { colors, typography, spacing } from '../../constants/theme';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { API_ENDPOINTS } from '../../config/api';
+import { useUser } from '../../context/UserContext';
 
 interface LoginForm {
   email: string;
@@ -20,6 +21,7 @@ interface LoginForm {
 }
 
 export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
+  const { setUser } = useUser();
   const [form, setForm] = useState<LoginForm>({
     email: '',
     password: '',
@@ -64,13 +66,12 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         throw new Error(data.message || 'Login failed');
       }
 
-      // Handle successful login
-      // Store the token
-      // TODO: Add secure token storage
-      console.log('Login successful:', data);
-      
-      // Navigate to main app
-      // TODO: Add navigation to main app screen
+      // Store user data in context
+      setUser({
+        username: data.username,
+        email: data.email,
+        token: data.token,
+      });
       
     } catch (error) {
       console.error('Login error:', error);

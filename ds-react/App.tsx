@@ -1,18 +1,18 @@
 import 'react-native-gesture-handler';
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { AuthNavigator } from './src/navigation/AuthNavigator';
-import { StyleSheet } from 'react-native';
+import { UserProvider } from './src/context/UserContext';
+import { AppNavigator } from './src/navigation/AppNavigator';
 
 export default function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <NavigationContainer>
-          <AuthNavigator />
-        </NavigationContainer>
+        <UserProvider>
+          <AppNavigator />
+        </UserProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
