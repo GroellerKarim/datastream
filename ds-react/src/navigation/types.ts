@@ -8,6 +8,7 @@ export type AuthStackParamList = {
 export type MainStackParamList = {
   Dashboard: undefined;
   Workouts: undefined;
+  WorkoutTracking: undefined;
   Sleep: undefined;
   Heart: undefined;
   Habits: undefined;
