@@ -3,11 +3,20 @@ export const colors = {
   secondary: '#3B82F6',
   background: '#FFFFFF',
   surface: '#F3F4F6',
+  surfaceHover: '#E5E7EB',
   text: '#1F2937',
   textSecondary: '#6B7280',
   error: '#DC2626',
   success: '#059669',
   border: '#E5E7EB',
+  // Data visualization colors
+  dataBlue: '#5794F2',
+  dataGreen: '#73BF69',
+  dataOrange: '#FF9830',
+  dataPurple: '#8F3BB8',
+  // Card backgrounds
+  cardBg: '#FAFAFA',
+  cardBgHover: '#F3F4F6',
 } as const;
 
 export const typography = {
@@ -65,4 +74,17 @@ export const shadows = {
     shadowRadius: 3.84,
     elevation: 5,
   },
+} as const;
+
+export const metrics = {
+  cardMinWidth: 150,
+  cardMaxWidth: 300,
+  gridGap: spacing.md,
+} as const;
+
+export const dataCard = {
+  padding: spacing.lg,
+  borderRadius: borderRadius.lg,
+  backgroundColor: colors.cardBg,
+  ...shadows.sm,
 } as const; 
