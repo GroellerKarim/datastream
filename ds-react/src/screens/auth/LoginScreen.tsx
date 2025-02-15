@@ -7,23 +7,29 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { colors, typography, spacing } from '../../constants/theme';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { API_ENDPOINTS } from '../../config/api';
 
 interface LoginForm {
-  username: string;
+  email: string;
   password: string;
 }
 
 export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [form, setForm] = useState<LoginForm>({
-    username: '',
+    email: '',
     password: '',
   });
   const [errors, setErrors] = useState<Partial<LoginForm>>({});
   const [loading, setLoading] = useState(false);
+
+  const validateEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handleLogin = async () => {
     try {
@@ -32,7 +38,8 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       // Basic validation
       const newErrors: Partial<LoginForm> = {};
-      if (!form.username) newErrors.username = 'Username is required';
+      if (!form.email) newErrors.email = 'Email is required';
+      if (!validateEmail(form.email)) newErrors.email = 'Invalid email format';
       if (!form.password) newErrors.password = 'Password is required';
       
       if (Object.keys(newErrors).length > 0) {
@@ -40,28 +47,46 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         return;
       }
 
-      const response = await fetch('/api/v1/users/login', {
+      const response = await fetch(API_ENDPOINTS.LOGIN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: form.username,
+          email: form.email,
           password: form.password,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Login failed');
+        throw new Error(data.message || 'Login failed');
       }
 
-      const data = await response.json();
-      // Handle successful login (store token, navigate, etc.)
+      // Handle successful login
+      // Store the token
+      // TODO: Add secure token storage
+      console.log('Login successful:', data);
+      
+      // Navigate to main app
+      // TODO: Add navigation to main app screen
       
     } catch (error) {
+      console.error('Login error:', error);
+      
+      // Show error in the form
       setErrors({
-        username: 'Invalid username or password',
+        email: 'Invalid email or password',
+        password: 'Invalid email or password',
       });
+
+      // Show error alert
+      Alert.alert(
+        'Login Failed',
+        'Please check your email and password and try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
@@ -76,45 +101,48 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Welcome to Datastream</Text>
-          <Text style={styles.subtitle}>Track your life data in one place</Text>
-        </View>
+        <View style={styles.contentContainer}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Welcome to Datastream</Text>
+            <Text style={styles.subtitle}>Track your life data in one place</Text>
+          </View>
 
-        <View style={styles.form}>
-          <Input
-            label="Username"
-            value={form.username}
-            onChangeText={(text) => setForm({ ...form, username: text })}
-            autoCapitalize="none"
-            error={errors.username}
-            placeholder="Enter your username"
-          />
+          <View style={styles.form}>
+            <Input
+              label="Email"
+              value={form.email}
+              onChangeText={(text) => setForm({ ...form, email: text })}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              error={errors.email}
+              placeholder="Enter your email"
+            />
 
-          <Input
-            label="Password"
-            value={form.password}
-            onChangeText={(text) => setForm({ ...form, password: text })}
-            secureTextEntry
-            error={errors.password}
-            placeholder="Enter your password"
-          />
+            <Input
+              label="Password"
+              value={form.password}
+              onChangeText={(text) => setForm({ ...form, password: text })}
+              secureTextEntry
+              error={errors.password}
+              placeholder="Enter your password"
+            />
 
-          <Button
-            title="Log In"
-            onPress={handleLogin}
-            loading={loading}
-            style={styles.loginButton}
-          />
+            <Button
+              title="Log In"
+              onPress={handleLogin}
+              loading={loading}
+              style={styles.loginButton}
+            />
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Register')}
-            style={styles.registerLink}
-          >
-            <Text style={styles.registerText}>
-              Don't have an account? <Text style={styles.registerTextBold}>Sign up</Text>
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Register')}
+              style={styles.registerLink}
+            >
+              <Text style={styles.registerText}>
+                Don't have an account? <Text style={styles.registerTextBold}>Sign up</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -128,10 +156,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  contentContainer: {
+    flex: 1,
     padding: spacing.lg,
+    justifyContent: 'center',
+    minHeight: '100%',
   },
   header: {
-    marginTop: spacing.xl,
     marginBottom: spacing.xl,
   },
   title: {
@@ -147,7 +179,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   form: {
-    marginTop: spacing.lg,
+    width: '100%',
   },
   loginButton: {
     marginTop: spacing.md,

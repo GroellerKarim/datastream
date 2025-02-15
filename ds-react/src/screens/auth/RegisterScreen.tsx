@@ -7,10 +7,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { colors, typography, spacing } from '../../constants/theme';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
+import { API_ENDPOINTS } from '../../config/api';
 
 interface RegisterForm {
   username: string;
@@ -54,7 +56,7 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         return;
       }
 
-      const response = await fetch('/api/v1/users/register', {
+      const response = await fetch(API_ENDPOINTS.REGISTER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -66,17 +68,39 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         }),
       });
 
-      if (!response.ok) {
-        throw new Error('Registration failed');
+      const data = await response.text();
+      console.log('Registration response:', data);
+
+      if (response.status !== 201) {
+        throw new Error(data || 'Registration failed');
       }
 
-      // Navigate to login screen on success
-      navigation.navigate('Login');
+      // Show success message
+      Alert.alert(
+        'Registration Successful',
+        'Your account has been created. Please log in.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
       
     } catch (error) {
+      console.error('Registration error:', error);
+      
+      // Show error in the form
       setErrors({
-        username: 'Registration failed. Please try again.',
+        email: 'Registration failed. Please try again.',
       });
+
+      // Show error alert
+      Alert.alert(
+        'Registration Failed',
+        'There was an error creating your account. Please try again.',
+        [{ text: 'OK' }]
+      );
     } finally {
       setLoading(false);
     }
@@ -91,64 +115,66 @@ export const RegisterScreen: React.FC<{ navigation: any }> = ({ navigation }) =>
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join Datastream to track your life data</Text>
-        </View>
+        <View style={styles.contentContainer}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join Datastream to track your life data</Text>
+          </View>
 
-        <View style={styles.form}>
-          <Input
-            label="Username"
-            value={form.username}
-            onChangeText={(text) => setForm({ ...form, username: text })}
-            autoCapitalize="none"
-            error={errors.username}
-            placeholder="Choose a username"
-          />
+          <View style={styles.form}>
+            <Input
+              label="Username"
+              value={form.username}
+              onChangeText={(text) => setForm({ ...form, username: text })}
+              autoCapitalize="none"
+              error={errors.username}
+              placeholder="Choose a username"
+            />
 
-          <Input
-            label="Email"
-            value={form.email}
-            onChangeText={(text) => setForm({ ...form, email: text })}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            error={errors.email}
-            placeholder="Enter your email"
-          />
+            <Input
+              label="Email"
+              value={form.email}
+              onChangeText={(text) => setForm({ ...form, email: text })}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              error={errors.email}
+              placeholder="Enter your email"
+            />
 
-          <Input
-            label="Password"
-            value={form.password}
-            onChangeText={(text) => setForm({ ...form, password: text })}
-            secureTextEntry
-            error={errors.password}
-            placeholder="Create a password"
-          />
+            <Input
+              label="Password"
+              value={form.password}
+              onChangeText={(text) => setForm({ ...form, password: text })}
+              secureTextEntry
+              error={errors.password}
+              placeholder="Create a password"
+            />
 
-          <Input
-            label="Confirm Password"
-            value={form.confirmPassword}
-            onChangeText={(text) => setForm({ ...form, confirmPassword: text })}
-            secureTextEntry
-            error={errors.confirmPassword}
-            placeholder="Confirm your password"
-          />
+            <Input
+              label="Confirm Password"
+              value={form.confirmPassword}
+              onChangeText={(text) => setForm({ ...form, confirmPassword: text })}
+              secureTextEntry
+              error={errors.confirmPassword}
+              placeholder="Confirm your password"
+            />
 
-          <Button
-            title="Create Account"
-            onPress={handleRegister}
-            loading={loading}
-            style={styles.registerButton}
-          />
+            <Button
+              title="Create Account"
+              onPress={handleRegister}
+              loading={loading}
+              style={styles.registerButton}
+            />
 
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Login')}
-            style={styles.loginLink}
-          >
-            <Text style={styles.loginText}>
-              Already have an account? <Text style={styles.loginTextBold}>Log in</Text>
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Login')}
+              style={styles.loginLink}
+            >
+              <Text style={styles.loginText}>
+                Already have an account? <Text style={styles.loginTextBold}>Log in</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -162,10 +188,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+  },
+  contentContainer: {
+    flex: 1,
     padding: spacing.lg,
+    justifyContent: 'center',
+    minHeight: '100%',
   },
   header: {
-    marginTop: spacing.xl,
     marginBottom: spacing.xl,
   },
   title: {
@@ -181,7 +211,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   form: {
-    marginTop: spacing.lg,
+    width: '100%',
   },
   registerButton: {
     marginTop: spacing.md,
