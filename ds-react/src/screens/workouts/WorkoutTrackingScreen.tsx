@@ -11,6 +11,7 @@ import { ExerciseSelector } from '../../components/exercise/ExerciseSelector';
 import { SetsRepsExercise } from '../../components/exercise/SetsRepsExercise';
 import { DistanceExercise } from '../../components/exercise/DistanceExercise';
 import { SetsTimeExercise } from '../../components/exercise/SetsTimeExercise';
+import { WorkoutTypeSelector } from '../../components/workout/WorkoutTypeSelector';
 
 type WorkoutTypeResponse = {
   id: number;
@@ -200,7 +201,7 @@ export const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       )}
 
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         {isLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
@@ -217,16 +218,10 @@ export const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
         ) : !selectedWorkoutType ? (
           <View style={styles.workoutTypeContainer}>
             <Text style={styles.sectionTitle}>Select Workout Type</Text>
-            <View style={styles.workoutTypeGrid}>
-              {workoutTypes.map((type) => (
-                <Button
-                  key={type.id}
-                  title={type.name}
-                  onPress={() => handleWorkoutTypeSelect(type)}
-                  style={styles.workoutTypeButton}
-                />
-              ))}
-            </View>
+            <WorkoutTypeSelector
+              workoutTypes={workoutTypes}
+              onSelect={handleWorkoutTypeSelect}
+            />
           </View>
         ) : (
           <View style={styles.exerciseContainer}>
@@ -282,7 +277,7 @@ export const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
             )}
           </View>
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 };
@@ -350,6 +345,7 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   workoutTypeContainer: {
+    flex: 1,
     padding: spacing.md,
   },
   sectionTitle: {
@@ -357,14 +353,6 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
     color: colors.text,
     marginBottom: spacing.md,
-  },
-  workoutTypeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  workoutTypeButton: {
-    minWidth: 150,
   },
   exerciseContainer: {
     padding: spacing.md,
