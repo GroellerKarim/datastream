@@ -9,4 +9,5 @@ export const API_ENDPOINTS = {
   WORKOUTS: `${API_BASE_URL}/api/v1/workouts`,
   EXERCISE_DEFINITIONS: `${API_BASE_URL}/api/v1/exercises/all`,
   RECENT_EXERCISES: (workoutTypeId: number) => `${API_BASE_URL}/api/v1/exercises/recent/${workoutTypeId}`,
+  ALL_EXERCISES: `${API_BASE_URL}/api/v1/exercises/all`,
 } as const; 

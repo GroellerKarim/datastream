@@ -10,7 +10,7 @@ import {
   Switch,
 } from 'react-native';
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
-import { ExerciseDefinitionResponse } from '../../types/responses';
+import { ExerciseDefinitionResponse } from '../../constants/types';
 import { format, formatDuration, intervalToDuration } from 'date-fns';
 
 type ExerciseSet = {

@@ -9,8 +9,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
-import { ExerciseDefinitionResponse } from '../../types/responses';
-import { DistanceUnit } from '../../constants/types';
+import { ExerciseDefinitionResponse, DistanceUnit } from '../../constants/types';
 import { Picker } from '@react-native-picker/picker';
 
 type Props = {

@@ -8,10 +8,10 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
+  SectionList,
 } from 'react-native';
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
-import { ExerciseDefinitionResponse } from '../../types/responses';
-import { ExerciseType } from '../../constants/types';
+import { ExerciseDefinitionResponse, ExerciseType } from '../../constants/types';
 import axios from 'axios';
 import { API_ENDPOINTS } from '../../config/api';
 import { useUser } from '../../context/UserContext';
@@ -30,7 +30,8 @@ const ExerciseSelectionDialog: React.FC<Props> = ({
   workoutTypeId,
 }) => {
   const { user } = useUser();
-  const [exercises, setExercises] = useState<ExerciseDefinitionResponse[]>([]);
+  const [recentExercises, setRecentExercises] = useState<ExerciseDefinitionResponse[]>([]);
+  const [allExercises, setAllExercises] = useState<ExerciseDefinitionResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<ExerciseType | null>(null);
@@ -47,12 +48,18 @@ const ExerciseSelectionDialog: React.FC<Props> = ({
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get(API_ENDPOINTS.RECENT_EXERCISES(workoutTypeId), {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        });
-        setExercises(response.data);
+        
+        const [recentResponse, allResponse] = await Promise.all([
+          axios.get(API_ENDPOINTS.RECENT_EXERCISES(workoutTypeId), {
+            headers: { Authorization: `Bearer ${user.token}` },
+          }),
+          axios.get(API_ENDPOINTS.ALL_EXERCISES, {
+            headers: { Authorization: `Bearer ${user.token}` },
+          }),
+        ]);
+
+        setRecentExercises(recentResponse.data);
+        setAllExercises(allResponse.data);
       } catch (error) {
         console.error('Error fetching exercises:', error);
         setError('Failed to load exercises');
@@ -66,11 +73,32 @@ const ExerciseSelectionDialog: React.FC<Props> = ({
     }
   }, [visible, workoutTypeId, user]);
 
-  const filteredExercises = exercises.filter((exercise) => {
-    const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType ? exercise.type === selectedType : true;
-    return matchesSearch && matchesType;
-  });
+  const filterExercises = (exercises: ExerciseDefinitionResponse[]) => {
+    return exercises.filter((exercise) => {
+      const matchesSearch = exercise.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = selectedType ? exercise.type === selectedType : true;
+      return matchesSearch && matchesType;
+    });
+  };
+
+  const sections = [
+    {
+      title: 'Recent Exercises',
+      data: filterExercises(recentExercises),
+    },
+    {
+      title: 'All Exercises',
+      data: filterExercises(allExercises.filter(
+        exercise => !recentExercises.some(recent => recent.id === exercise.id)
+      )),
+    },
+  ];
+
+  const renderSectionHeader = ({ section: { title } }: { section: { title: string } }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
+  );
 
   const renderExerciseItem = ({ item }: { item: ExerciseDefinitionResponse }) => (
     <TouchableOpacity style={styles.exerciseItem} onPress={() => onSelect(item)}>
@@ -100,18 +128,6 @@ const ExerciseSelectionDialog: React.FC<Props> = ({
           />
 
           <View style={styles.typeFilters}>
-            <TouchableOpacity
-              style={[
-                styles.typeFilter,
-                !selectedType && styles.typeFilterSelected,
-              ]}
-              onPress={() => setSelectedType(null)}
-            >
-              <Text style={[
-                styles.typeFilterText,
-                !selectedType && styles.typeFilterTextSelected,
-              ]}>All</Text>
-            </TouchableOpacity>
             {Object.values(ExerciseType).map((type) => (
               <TouchableOpacity
                 key={type}
@@ -119,7 +135,7 @@ const ExerciseSelectionDialog: React.FC<Props> = ({
                   styles.typeFilter,
                   selectedType === type && styles.typeFilterSelected,
                 ]}
-                onPress={() => setSelectedType(type)}
+                onPress={() => setSelectedType(type === selectedType ? null : type)}
               >
                 <Text style={[
                   styles.typeFilterText,
@@ -136,11 +152,13 @@ const ExerciseSelectionDialog: React.FC<Props> = ({
           ) : loading ? (
             <ActivityIndicator size="large" color={colors.primary} />
           ) : (
-            <FlatList
-              data={filteredExercises}
+            <SectionList
+              sections={sections}
               renderItem={renderExerciseItem}
+              renderSectionHeader={renderSectionHeader}
               keyExtractor={(item) => item.id.toString()}
               contentContainerStyle={styles.list}
+              stickySectionHeadersEnabled={true}
             />
           )}
         </View>
@@ -160,7 +178,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
     padding: spacing.lg,
-    maxHeight: '80%',
+    height: '80%',
   },
   header: {
     flexDirection: 'row',
@@ -234,11 +252,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
+    backgroundColor: colors.background,
   },
   errorText: {
     color: colors.error,
     fontSize: typography.sizes.md,
     textAlign: 'center',
+  },
+  sectionHeader: {
+    backgroundColor: colors.background,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    color: colors.textSecondary,
   },
 });
 
