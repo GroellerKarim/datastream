@@ -82,7 +82,7 @@ export const WorkoutsScreen: React.FC<Props> = ({ navigation }) => {
       <View style={styles.actionButtons}>
         <Pressable 
           style={[styles.actionButton, styles.primaryButton]}
-          onPress={() => navigation.navigate('WorkoutTracking')}
+          onPress={() => navigation.navigate('NewWorkout')}
         >
           <Icon name="plus-circle" size={20} color={colors.background} />
           <Text style={styles.primaryButtonText}>Start Workout</Text>
