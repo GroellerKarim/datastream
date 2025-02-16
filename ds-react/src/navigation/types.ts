@@ -11,6 +11,7 @@ export type MainStackParamList = {
   Sleep: undefined;
   Heart: undefined;
   Habits: undefined;
+  WorkoutTracking: undefined;
 };
 
 export type RootStackParamList = {

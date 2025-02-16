@@ -10,6 +10,7 @@ import { RegisterScreen } from '../screens/auth/RegisterScreen';
 // Main App Screens
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { WorkoutsScreen } from '../screens/workouts/WorkoutsScreen';
+import WorkoutTrackingScreen from '../screens/workouts/WorkoutTrackingScreen';
 import { SleepScreen } from '../screens/sleep/SleepScreen';
 import { HeartScreen } from '../screens/heart/HeartScreen';
 import { HabitsScreen } from '../screens/habits/HabitsScreen';
@@ -41,6 +42,7 @@ const MainNavigator = () => {
     >
       <MainStack.Screen name="Dashboard" component={DashboardScreen} />
       <MainStack.Screen name="Workouts" component={WorkoutsScreen} />
+      <MainStack.Screen name="WorkoutTracking" component={WorkoutTrackingScreen} />
       <MainStack.Screen name="Sleep" component={SleepScreen} />
       <MainStack.Screen name="Heart" component={HeartScreen} />
       <MainStack.Screen name="Habits" component={HabitsScreen} />

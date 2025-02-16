@@ -63,3 +63,15 @@ export type WorkoutListResponse = {
   first: boolean;
   empty: boolean;
 }; 
+
+export type WorkoutTypeResponse = {
+  id: number;
+  name: string;
+};
+
+export type ExerciseDefinitionResponse = {
+  id: number;
+  name: string;
+  type: ExerciseType;
+  description?: string;
+}; 
