@@ -192,56 +192,63 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
                       </TouchableOpacity>
                     ) : (
                       <View style={styles.setInputs}>
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>Weight (kg)</Text>
-                          <TextInput
-                            style={styles.input}
-                            keyboardType="numeric"
-                            value={set.weight.toString()}
-                            onChangeText={(value) =>
-                              updateSet(index, { weight: Number(value) || 0 })
-                            }
-                          />
-                        </View>
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>Reps</Text>
-                          <TextInput
-                            style={styles.input}
-                            keyboardType="numeric"
-                            value={set.reps.toString()}
-                            onChangeText={(value) =>
-                              updateSet(index, { reps: Number(value) || 0 })
-                            }
-                          />
-                        </View>
-                        <View style={styles.failureGroup}>
-                          <Text style={styles.inputLabel}>Failure</Text>
-                          <Switch
-                            value={set.failure}
-                            onValueChange={(value) =>
-                              updateSet(index, { failure: value })
-                            }
-                          />
-                        </View>
-                        {set.failure && (
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Partial Reps</Text>
-                            <TextInput
-                              style={styles.input}
-                              keyboardType="numeric"
-                              value={set.partialReps?.toString() || '0'}
-                              onChangeText={(value) =>
-                                updateSet(index, { partialReps: Number(value) || 0 })
-                              }
-                            />
+                        <View style={styles.inputsContainer}>
+                          <View style={styles.column}>
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>Weight (kg)</Text>
+                              <TextInput
+                                style={styles.input}
+                                keyboardType="numeric"
+                                value={set.weight.toString()}
+                                onChangeText={(value) =>
+                                  updateSet(index, { weight: Number(value) || 0 })
+                                }
+                              />
+                            </View>
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>Partial Reps</Text>
+                              <TextInput
+                                style={[styles.input, !set.failure && styles.disabledInput]}
+                                keyboardType="numeric"
+                                value={set.partialReps?.toString() || '0'}
+                                onChangeText={(value) =>
+                                  updateSet(index, { partialReps: Number(value) || 0 })
+                                }
+                                editable={set.failure}
+                              />
+                            </View>
                           </View>
-                        )}
-                        <TouchableOpacity
-                          style={styles.completeSetButton}
-                          onPress={() => completeSet(index)}
-                        >
-                          <Text style={styles.buttonText}>Complete Set</Text>
-                        </TouchableOpacity>
+                          <View style={styles.column}>
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>Reps</Text>
+                              <TextInput
+                                style={styles.input}
+                                keyboardType="numeric"
+                                value={set.reps.toString()}
+                                onChangeText={(value) =>
+                                  updateSet(index, { reps: Number(value) || 0 })
+                                }
+                              />
+                            </View>
+                            <View style={[styles.inputGroup, styles.failureGroup]}>
+                              <Text style={styles.inputLabel}>Failure</Text>
+                              <Switch
+                                value={set.failure}
+                                onValueChange={(value) =>
+                                  updateSet(index, { failure: value })
+                                }
+                              />
+                            </View>
+                          </View>
+                        </View>
+                        <View style={styles.completeSetContainer}>
+                          <TouchableOpacity
+                            style={styles.completeSetButton}
+                            onPress={() => completeSet(index)}
+                          >
+                            <Text style={styles.buttonText}>Complete Set</Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     )}
                   </View>
@@ -369,8 +376,15 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   setInputs: {
+    gap: spacing.md,
+  },
+  inputsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  column: {
+    flex: 1,
+    flexDirection: 'column',
     gap: spacing.md,
   },
   inputGroup: {
@@ -400,11 +414,16 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     backgroundColor: colors.background,
   },
+  completeSetContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
   completeSetButton: {
     backgroundColor: colors.success,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    marginTop: spacing.md,
+    width: '80%',
+    alignItems: 'center',
   },
   completeExerciseButton: {
     backgroundColor: colors.primary,
@@ -417,6 +436,10 @@ const styles = StyleSheet.create({
   },
   disabledButtonText: {
     color: colors.textSecondary,
+  },
+  disabledInput: {
+    backgroundColor: colors.surfaceHover,
+    opacity: 0.7,
   },
 });
 
