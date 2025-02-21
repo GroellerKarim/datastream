@@ -38,6 +38,23 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   const [sets, setSets] = useState<ExerciseSet[]>([]);
   const [currentSet, setCurrentSet] = useState<number | null>(null);
   const [restTimer, setRestTimer] = useState<string>('00:00');
+  const [isSetInProgress, setIsSetInProgress] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setSets([{
+        startTime: null,
+        endTime: null,
+        reps: 0,
+        weight: 0,
+        failure: false,
+        partialReps: 0,
+      }]);
+      setCurrentSet(null);
+      setIsSetInProgress(false);
+      setRestTimer('00:00');
+    }
+  }, [visible]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -72,11 +89,13 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
         reps: 0,
         weight: 0,
         failure: false,
+        partialReps: 0,
       },
     ]);
   };
 
   const startSet = (index: number) => {
+    setIsSetInProgress(true);
     const updatedSets = [...sets];
     updatedSets[index] = {
       ...updatedSets[index],
@@ -87,6 +106,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   };
 
   const endSet = (index: number) => {
+    setIsSetInProgress(false);
     const updatedSets = [...sets];
     updatedSets[index] = {
       ...updatedSets[index],
@@ -102,6 +122,14 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
       ...updates,
     };
     setSets(updatedSets);
+  };
+
+  const completeSet = (index: number) => {
+    if (index === sets.length - 1) {
+      // Add a new set automatically when completing the last set
+      addSet();
+    }
+    setCurrentSet(null);
   };
 
   const getSetDuration = (set: ExerciseSet) => {
@@ -128,100 +156,107 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
             </TouchableOpacity>
           </View>
 
-          {currentSet !== null && sets[currentSet].endTime && (
-            <View style={styles.restTimer}>
-              <Text style={styles.restTimerLabel}>Rest Time:</Text>
-              <Text style={styles.restTimerValue}>{restTimer}</Text>
-            </View>
-          )}
+          <View style={styles.mainContent}>
+            {currentSet !== null && sets[currentSet].endTime && (
+              <View style={styles.restTimer}>
+                <Text style={styles.restTimerLabel}>Rest Time:</Text>
+                <Text style={styles.restTimerValue}>{restTimer}</Text>
+              </View>
+            )}
 
-          <ScrollView style={styles.setsList}>
-            {sets.map((set, index) => (
-              <View key={index} style={styles.setItem}>
-                <View style={styles.setHeader}>
-                  <Text style={styles.setTitle}>Set {index + 1}</Text>
-                  {set.startTime && set.endTime && (
-                    <Text style={styles.setDuration}>{getSetDuration(set)}</Text>
-                  )}
-                </View>
+            <ScrollView style={styles.setsList} contentContainerStyle={styles.setsListContent}>
+              {sets.map((set, index) => (
+                <View key={index} style={styles.setItem}>
+                  <View style={styles.setHeader}>
+                    <Text style={styles.setTitle}>Set {index + 1}</Text>
+                    {set.startTime && set.endTime && (
+                      <Text style={styles.setDuration}>{getSetDuration(set)}</Text>
+                    )}
+                  </View>
 
-                <View style={styles.setControls}>
-                  {!set.startTime ? (
-                    <TouchableOpacity
-                      style={styles.startButton}
-                      onPress={() => startSet(index)}
-                    >
-                      <Text style={styles.buttonText}>Start Set</Text>
-                    </TouchableOpacity>
-                  ) : !set.endTime ? (
-                    <TouchableOpacity
-                      style={styles.endButton}
-                      onPress={() => endSet(index)}
-                    >
-                      <Text style={styles.buttonText}>End Set</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <View style={styles.setInputs}>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Weight (kg)</Text>
-                        <TextInput
-                          style={styles.input}
-                          keyboardType="numeric"
-                          value={set.weight.toString()}
-                          onChangeText={(value) =>
-                            updateSet(index, { weight: Number(value) || 0 })
-                          }
-                        />
-                      </View>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Reps</Text>
-                        <TextInput
-                          style={styles.input}
-                          keyboardType="numeric"
-                          value={set.reps.toString()}
-                          onChangeText={(value) =>
-                            updateSet(index, { reps: Number(value) || 0 })
-                          }
-                        />
-                      </View>
-                      <View style={styles.failureGroup}>
-                        <Text style={styles.inputLabel}>Failure</Text>
-                        <Switch
-                          value={set.failure}
-                          onValueChange={(value) =>
-                            updateSet(index, { failure: value })
-                          }
-                        />
-                      </View>
-                      {set.failure && (
+                  <View style={styles.setControls}>
+                    {!set.startTime ? (
+                      <TouchableOpacity
+                        style={[styles.startButton, isSetInProgress && styles.disabledButton]}
+                        onPress={() => startSet(index)}
+                        disabled={isSetInProgress}
+                      >
+                        <Text style={[styles.buttonText, isSetInProgress && styles.disabledButtonText]}>Start Set</Text>
+                      </TouchableOpacity>
+                    ) : !set.endTime ? (
+                      <TouchableOpacity
+                        style={styles.endButton}
+                        onPress={() => endSet(index)}
+                      >
+                        <Text style={styles.buttonText}>Stop Set</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={styles.setInputs}>
                         <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>Partial Reps</Text>
+                          <Text style={styles.inputLabel}>Weight (kg)</Text>
                           <TextInput
                             style={styles.input}
                             keyboardType="numeric"
-                            value={set.partialReps?.toString() || '0'}
+                            value={set.weight.toString()}
                             onChangeText={(value) =>
-                              updateSet(index, { partialReps: Number(value) || 0 })
+                              updateSet(index, { weight: Number(value) || 0 })
                             }
                           />
                         </View>
-                      )}
-                    </View>
-                  )}
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Reps</Text>
+                          <TextInput
+                            style={styles.input}
+                            keyboardType="numeric"
+                            value={set.reps.toString()}
+                            onChangeText={(value) =>
+                              updateSet(index, { reps: Number(value) || 0 })
+                            }
+                          />
+                        </View>
+                        <View style={styles.failureGroup}>
+                          <Text style={styles.inputLabel}>Failure</Text>
+                          <Switch
+                            value={set.failure}
+                            onValueChange={(value) =>
+                              updateSet(index, { failure: value })
+                            }
+                          />
+                        </View>
+                        {set.failure && (
+                          <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Partial Reps</Text>
+                            <TextInput
+                              style={styles.input}
+                              keyboardType="numeric"
+                              value={set.partialReps?.toString() || '0'}
+                              onChangeText={(value) =>
+                                updateSet(index, { partialReps: Number(value) || 0 })
+                              }
+                            />
+                          </View>
+                        )}
+                        <TouchableOpacity
+                          style={styles.completeSetButton}
+                          onPress={() => completeSet(index)}
+                        >
+                          <Text style={styles.buttonText}>Complete Set</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
                 </View>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
+          </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.addSetButton} onPress={addSet}>
-              <Text style={styles.buttonText}>Add Set</Text>
-            </TouchableOpacity>
             <TouchableOpacity
-              style={styles.saveButton}
+              style={styles.completeExerciseButton}
               onPress={() => onSave(sets)}
+              disabled={sets.length === 0 || sets.some(set => !set.endTime)}
             >
-              <Text style={styles.buttonText}>Save Exercise</Text>
+              <Text style={styles.buttonText}>Complete Exercise</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -240,14 +275,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
-    padding: spacing.lg,
-    maxHeight: '90%',
+    height: '90%',
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  mainContent: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
   },
   title: {
     fontSize: typography.sizes.xl,
@@ -282,6 +323,9 @@ const styles = StyleSheet.create({
   },
   setsList: {
     flex: 1,
+  },
+  setsListContent: {
+    paddingVertical: spacing.md,
   },
   setItem: {
     backgroundColor: colors.surface,
@@ -351,23 +395,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.md,
+    padding: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    backgroundColor: colors.background,
   },
-  addSetButton: {
-    flex: 1,
-    backgroundColor: colors.secondary,
+  completeSetButton: {
+    backgroundColor: colors.success,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
+    marginTop: spacing.md,
   },
-  saveButton: {
-    flex: 1,
+  completeExerciseButton: {
     backgroundColor: colors.primary,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    alignItems: 'center',
+    marginTop: spacing.lg,
+  },
+  disabledButton: {
+    backgroundColor: colors.surfaceHover,
+  },
+  disabledButtonText: {
+    color: colors.textSecondary,
   },
 });
 

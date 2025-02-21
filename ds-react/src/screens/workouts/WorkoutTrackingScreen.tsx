@@ -238,6 +238,18 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.timer}>{duration}</Text>
             </View>
 
+            {selectedExercise && (
+              <View style={[styles.exerciseCard, styles.currentExerciseCard]}>
+                <Text style={styles.currentExerciseLabel}>Current Exercise</Text>
+                <Text style={styles.exerciseName}>
+                  {selectedExercise.name}
+                </Text>
+                <Text style={styles.exerciseType}>
+                  {selectedExercise.type}
+                </Text>
+              </View>
+            )}
+
             {trackedExercises.map((exercise, index) => (
               <View key={index} style={styles.exerciseCard}>
                 <Text style={styles.exerciseName}>
@@ -419,6 +431,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
+  },
+  currentExerciseCard: {
+    backgroundColor: colors.primary,
+    marginBottom: spacing.lg,
+  },
+  currentExerciseLabel: {
+    color: colors.background,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    marginBottom: spacing.xs,
+  },
+  exerciseType: {
+    color: colors.textSecondary,
+    fontSize: typography.sizes.sm,
+    marginTop: spacing.xs,
   },
 });
 
