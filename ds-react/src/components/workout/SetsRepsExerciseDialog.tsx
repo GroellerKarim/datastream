@@ -134,15 +134,11 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
 
   const getSetDuration = (set: ExerciseSet) => {
     if (!set.startTime || !set.endTime) return '00:00';
-    const duration = intervalToDuration({
-      start: set.startTime,
-      end: set.endTime,
-    });
-    return formatDuration(duration, {
-      format: ['minutes', 'seconds'],
-      zero: true,
-      delimiter: ':',
-    });
+    const durationInMs = set.endTime.getTime() - set.startTime.getTime();
+    const seconds = Math.floor(durationInMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   return (
@@ -170,7 +166,10 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
                   <View style={styles.setHeader}>
                     <Text style={styles.setTitle}>Set {index + 1}</Text>
                     {set.startTime && set.endTime && (
-                      <Text style={styles.setDuration}>{getSetDuration(set)}</Text>
+                      <View style={styles.durationContainer}>
+                        <Text style={styles.durationLabel}>Duration:</Text>
+                        <Text style={styles.durationValue}>{getSetDuration(set)}</Text>
+                      </View>
                     )}
                   </View>
 
@@ -351,9 +350,23 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
     color: colors.text,
   },
-  setDuration: {
+  durationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceHover,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+  },
+  durationLabel: {
     fontSize: typography.sizes.sm,
     color: colors.textSecondary,
+    marginRight: spacing.xs,
+  },
+  durationValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.text,
   },
   setControls: {
     gap: spacing.sm,
