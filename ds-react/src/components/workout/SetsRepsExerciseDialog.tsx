@@ -20,6 +20,7 @@ type ExerciseSet = {
   weight: number;
   failure: boolean;
   partialReps?: number;
+  restTime?: number; // Rest time in milliseconds
 };
 
 type Props = {
@@ -51,6 +52,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
         weight: 0,
         failure: false,
         partialReps: 0,
+        restTime: 0,
       }]);
       setCurrentSet(null);
       setIsSetInProgress(false);
@@ -103,6 +105,14 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // Format milliseconds to mm:ss
+  const formatMsToTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
   const addSet = () => {
     const newSetIndex = sets.length;
     setSets([
@@ -114,6 +124,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
         weight: 0,
         failure: false,
         partialReps: 0,
+        restTime: 0,
       },
     ]);
     setExpandedSets(prev => ({...prev, [newSetIndex]: true}));
@@ -122,10 +133,25 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   const startSet = (index: number) => {
     setIsSetInProgress(true);
     const updatedSets = [...sets];
-    updatedSets[index] = {
-      ...updatedSets[index],
-      startTime: new Date(),
-    };
+    const now = new Date();
+    
+    // Calculate rest time from previous set if available
+    if (index > 0 && updatedSets[index - 1].endTime) {
+      const previousSetEndTime = updatedSets[index - 1].endTime!;
+      const restTimeMs = now.getTime() - previousSetEndTime.getTime();
+      updatedSets[index] = {
+        ...updatedSets[index],
+        startTime: now,
+        restTime: restTimeMs,
+      };
+    } else {
+      updatedSets[index] = {
+        ...updatedSets[index],
+        startTime: now,
+        restTime: 0,
+      };
+    }
+    
     setSets(updatedSets);
     setCurrentSet(index);
     setExpandedSets(prev => ({...prev, [index]: true}));
@@ -153,6 +179,19 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
 
   const completeSet = (index: number) => {
     setExpandedSets(prev => ({...prev, [index]: false}));
+    
+    // Save the current time when completing the set - will be used to calculate rest time
+    const completionTime = new Date();
+    const updatedSets = [...sets];
+    
+    // Make sure the endTime is set accurately
+    if (updatedSets[index].startTime && !updatedSets[index].endTime) {
+      updatedSets[index] = {
+        ...updatedSets[index],
+        endTime: completionTime,
+      };
+      setSets(updatedSets);
+    }
     
     if (index === sets.length - 1) {
       addSet();
@@ -185,11 +224,42 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
     return (
       <View style={styles.setSummary}>
         <Text style={styles.summaryText}>
-          {set.weight} kg × {set.reps} reps
-          {set.failure ? ` (to failure${set.partialReps ? ` +${set.partialReps} p` : ''})` : ''}
+          {`${set.weight} kg × ${set.reps} reps`}
+          {set.failure ? <Text>{` (to failure${set.partialReps ? ` +${set.partialReps} p` : ''})`}</Text> : null}
         </Text>
-        <Text style={styles.durationText}>{getSetDuration(set)}</Text>
+        <View style={styles.timersContainer}>
+          <View style={styles.timerItem}>
+            <Text style={styles.timerLabel}>Duration:</Text>
+            <Text style={styles.timerValue}>{getSetDuration(set)}</Text>
+          </View>
+          {set.restTime && set.restTime > 0 ? (
+            <View style={styles.timerItem}>
+              <Text style={styles.timerLabel}>Rest:</Text>
+              <Text style={styles.timerValue}>{formatMsToTime(set.restTime)}</Text>
+            </View>
+          ) : null}
+        </View>
       </View>
+    );
+  };
+
+  // Debug function to log set data - can be removed after fixing
+  const logSetData = (set: ExerciseSet, index: number) => {
+    console.log(`Set ${index + 1} data:`, {
+      weight: set.weight,
+      reps: set.reps,
+      restTime: set.restTime,
+      startTime: set.startTime,
+      endTime: set.endTime,
+      restTimeFormatted: set.restTime ? formatMsToTime(set.restTime) : 'N/A'
+    });
+  };
+
+  const renderExpandIcon = (isExpanded: boolean) => {
+    return (
+      <Text style={styles.expandCollapseIcon}>
+        {isExpanded ? '▼' : '▶'}
+      </Text>
     );
   };
 
@@ -205,15 +275,21 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
           </View>
 
           <View style={styles.mainContent}>
-            {currentSet !== null && sets[currentSet].endTime && (
+            {currentSet !== null && sets[currentSet].endTime ? (
               <View style={styles.restTimer}>
                 <Text style={styles.restTimerLabel}>Rest Time:</Text>
                 <Text style={styles.restTimerValue}>{restTimer}</Text>
               </View>
-            )}
+            ) : null}
 
             <ScrollView style={styles.setsList} contentContainerStyle={styles.setsListContent}>
-              {sets.map((set, index) => (
+              {sets.map((set, index) => {
+                // Log set data to debug rest time issues
+                if (set.endTime) {
+                  logSetData(set, index);
+                }
+                
+                return (
                 <View key={index} style={styles.setItem}>
                   <TouchableOpacity 
                     style={styles.setHeader} 
@@ -221,17 +297,15 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
                     disabled={!set.endTime}
                   >
                     <Text style={styles.setTitle}>Set {index + 1}</Text>
-                    {set.endTime && (
+                    {set.endTime ? (
                       <View style={styles.setHeaderRight}>
-                        {!expandedSets[index] && renderSetSummary(set)}
-                        <Text style={styles.expandCollapseIcon}>
-                          {expandedSets[index] ? '▼' : '▶'}
-                        </Text>
+                        {!expandedSets[index] ? renderSetSummary(set) : null}
+                        {renderExpandIcon(expandedSets[index])}
                       </View>
-                    )}
+                    ) : null}
                   </TouchableOpacity>
 
-                  {(!set.endTime || expandedSets[index]) && (
+                  {(!set.endTime || expandedSets[index]) ? (
                     <View style={styles.setControls}>
                       {!set.startTime ? (
                         <TouchableOpacity
@@ -305,6 +379,14 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
                               </View>
                             </View>
                           </View>
+                          
+                          {set.restTime && set.restTime > 0 ? (
+                            <View style={styles.restSummary}>
+                              <Text style={styles.restSummaryLabel}>Rest time before this set:</Text>
+                              <Text style={styles.restSummaryValue}>{formatMsToTime(set.restTime)}</Text>
+                            </View>
+                          ) : null}
+                          
                           <View style={styles.completeSetContainer}>
                             <TouchableOpacity
                               style={styles.completeSetButton}
@@ -316,9 +398,10 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
                         </View>
                       )}
                     </View>
-                  )}
+                  ) : null}
                 </View>
-              ))}
+                );
+              })}
             </ScrollView>
           </View>
 
@@ -448,14 +531,35 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   setSummary: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
+    flexDirection: 'column',
+    gap: spacing.xs,
+    maxWidth: '80%',
   },
   summaryText: {
     fontSize: typography.sizes.sm,
     fontWeight: typography.weights.medium,
     color: colors.text,
+  },
+  timersContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  timerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: spacing.xs,
+  },
+  timerLabel: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    marginRight: spacing.xs,
+  },
+  timerValue: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
+    fontWeight: typography.weights.medium,
   },
   durationText: {
     fontSize: typography.sizes.sm,
@@ -531,6 +635,25 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     fontSize: typography.sizes.md,
     textAlign: 'center',
+  },
+  restSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceHover,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.xs,
+  },
+  restSummaryLabel: {
+    fontSize: typography.sizes.sm,
+    color: colors.text,
+    marginRight: spacing.sm,
+  },
+  restSummaryValue: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.primary,
   },
   footer: {
     padding: spacing.lg,
