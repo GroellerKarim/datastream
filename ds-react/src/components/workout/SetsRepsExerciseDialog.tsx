@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -42,6 +42,9 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   const [isSetInProgress, setIsSetInProgress] = useState(false);
   const [expandedSets, setExpandedSets] = useState<{[key: number]: boolean}>({});
   const [activeSetTimer, setActiveSetTimer] = useState<string>('00:00');
+  const [isRestActive, setIsRestActive] = useState(false);
+  const restStartTimeRef = useRef<Date | null>(null);
+  const accumulatedRestTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (visible) {
@@ -59,26 +62,38 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
       setRestTimer('00:00');
       setActiveSetTimer('00:00');
       setExpandedSets({0: true});
+      setIsRestActive(false);
+      restStartTimeRef.current = null;
+      accumulatedRestTimeRef.current = 0;
     }
   }, [visible]);
 
+  // Rest timer effect
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
-    if (currentSet !== null && sets[currentSet].endTime) {
+    
+    if (isRestActive && restStartTimeRef.current) {
       intervalId = setInterval(() => {
+        const now = new Date();
+        const baseTime = restStartTimeRef.current!;
+        const elapsedMs = now.getTime() - baseTime.getTime();
+        const totalRestMs = accumulatedRestTimeRef.current + elapsedMs;
+        
         const duration = intervalToDuration({
-          start: sets[currentSet].endTime!,
-          end: new Date(),
+          start: 0,
+          end: totalRestMs,
         });
+        
         setRestTimer(formatTime(duration));
       }, 1000);
     }
+    
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, [currentSet, sets]);
+  }, [isRestActive]);
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -131,19 +146,31 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   };
 
   const startSet = (index: number) => {
+    // Pause the rest timer when starting a set
+    if (isRestActive) {
+      // Store the accumulated rest time before pausing
+      const now = new Date();
+      const elapsedSinceRestStart = now.getTime() - (restStartTimeRef.current?.getTime() || now.getTime());
+      accumulatedRestTimeRef.current += elapsedSinceRestStart;
+      setIsRestActive(false);
+    }
+    
     setIsSetInProgress(true);
     const updatedSets = [...sets];
     const now = new Date();
     
     // Calculate rest time from previous set if available
     if (index > 0 && updatedSets[index - 1].endTime) {
-      const previousSetEndTime = updatedSets[index - 1].endTime!;
-      const restTimeMs = now.getTime() - previousSetEndTime.getTime();
+      // Rest time is already accumulated in our ref
       updatedSets[index] = {
         ...updatedSets[index],
         startTime: now,
-        restTime: restTimeMs,
+        restTime: accumulatedRestTimeRef.current,
       };
+      
+      // Log for debugging
+      console.log('Set started with rest time:', accumulatedRestTimeRef.current, 
+                  formatMsToTime(accumulatedRestTimeRef.current));
     } else {
       updatedSets[index] = {
         ...updatedSets[index],
@@ -161,11 +188,20 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   const endSet = (index: number) => {
     setIsSetInProgress(false);
     const updatedSets = [...sets];
+    const now = new Date();
     updatedSets[index] = {
       ...updatedSets[index],
-      endTime: new Date(),
+      endTime: now,
     };
     setSets(updatedSets);
+    
+    // Reset and start the rest timer
+    restStartTimeRef.current = now;
+    accumulatedRestTimeRef.current = 0;
+    setIsRestActive(true);
+    setRestTimer('00:00');
+    
+    console.log('Set ended, rest timer started at:', now);
   };
 
   const updateSet = (index: number, updates: Partial<ExerciseSet>) => {
@@ -180,7 +216,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   const completeSet = (index: number) => {
     setExpandedSets(prev => ({...prev, [index]: false}));
     
-    // Save the current time when completing the set - will be used to calculate rest time
+    // Save the current time when completing the set
     const completionTime = new Date();
     const updatedSets = [...sets];
     
@@ -192,6 +228,9 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
       };
       setSets(updatedSets);
     }
+    
+    // Log completion time for debugging
+    console.log('Set completed at:', completionTime, 'Rest time stored:', updatedSets[index].restTime);
     
     if (index === sets.length - 1) {
       addSet();
@@ -275,12 +314,23 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
           </View>
 
           <View style={styles.mainContent}>
-            {currentSet !== null && sets[currentSet].endTime ? (
-              <View style={styles.restTimer}>
-                <Text style={styles.restTimerLabel}>Rest Time:</Text>
-                <Text style={styles.restTimerValue}>{restTimer}</Text>
+            {/* Show rest timer whenever it's active or there's a completed set */}
+            {(isRestActive || sets.some(set => set.endTime)) && (
+              <View style={[
+                styles.restTimer, 
+                !isRestActive && styles.restTimerPaused
+              ]}>
+                <Text style={styles.restTimerLabel}>
+                  Rest Time {!isRestActive && "(Paused)"}:
+                </Text>
+                <Text style={[
+                  styles.restTimerValue, 
+                  !isRestActive && styles.restTimerValuePaused
+                ]}>
+                  {restTimer}
+                </Text>
               </View>
-            ) : null}
+            )}
 
             <ScrollView style={styles.setsList} contentContainerStyle={styles.setsListContent}>
               {sets.map((set, index) => {
@@ -463,7 +513,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    marginBottom: spacing.md,
+    marginVertical: spacing.md,
+  },
+  restTimerPaused: {
+    backgroundColor: colors.surfaceHover,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   restTimerLabel: {
     fontSize: typography.sizes.md,
@@ -475,6 +530,9 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     color: colors.primary,
+  },
+  restTimerValuePaused: {
+    color: colors.textSecondary,
   },
   activeSetContainer: {
     gap: spacing.md,
