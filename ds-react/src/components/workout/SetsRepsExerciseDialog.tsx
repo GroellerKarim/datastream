@@ -39,6 +39,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   const [currentSet, setCurrentSet] = useState<number | null>(null);
   const [restTimer, setRestTimer] = useState<string>('00:00');
   const [isSetInProgress, setIsSetInProgress] = useState(false);
+  const [expandedSets, setExpandedSets] = useState<{[key: number]: boolean}>({});
 
   useEffect(() => {
     if (visible) {
@@ -53,6 +54,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
       setCurrentSet(null);
       setIsSetInProgress(false);
       setRestTimer('00:00');
+      setExpandedSets({0: true});
     }
   }, [visible]);
 
@@ -81,6 +83,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   }, [currentSet, sets]);
 
   const addSet = () => {
+    const newSetIndex = sets.length;
     setSets([
       ...sets,
       {
@@ -92,6 +95,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
         partialReps: 0,
       },
     ]);
+    setExpandedSets(prev => ({...prev, [newSetIndex]: true}));
   };
 
   const startSet = (index: number) => {
@@ -103,6 +107,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
     };
     setSets(updatedSets);
     setCurrentSet(index);
+    setExpandedSets(prev => ({...prev, [index]: true}));
   };
 
   const endSet = (index: number) => {
@@ -125,11 +130,22 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   };
 
   const completeSet = (index: number) => {
+    setExpandedSets(prev => ({...prev, [index]: false}));
+    
     if (index === sets.length - 1) {
-      // Add a new set automatically when completing the last set
       addSet();
     }
+    
+    const nextSetIndex = index + 1;
+    if (nextSetIndex < sets.length) {
+      setExpandedSets(prev => ({...prev, [nextSetIndex]: true}));
+    }
+    
     setCurrentSet(null);
+  };
+
+  const toggleSetExpansion = (index: number) => {
+    setExpandedSets(prev => ({...prev, [index]: !prev[index]}));
   };
 
   const getSetDuration = (set: ExerciseSet) => {
@@ -139,6 +155,20 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const renderSetSummary = (set: ExerciseSet) => {
+    if (!set.endTime) return null;
+    
+    return (
+      <View style={styles.setSummary}>
+        <Text style={styles.summaryText}>
+          {set.weight} kg × {set.reps} reps
+          {set.failure ? ` (to failure${set.partialReps ? ` +${set.partialReps} p` : ''})` : ''}
+        </Text>
+        <Text style={styles.durationText}>{getSetDuration(set)}</Text>
+      </View>
+    );
   };
 
   return (
@@ -163,94 +193,102 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
             <ScrollView style={styles.setsList} contentContainerStyle={styles.setsListContent}>
               {sets.map((set, index) => (
                 <View key={index} style={styles.setItem}>
-                  <View style={styles.setHeader}>
+                  <TouchableOpacity 
+                    style={styles.setHeader} 
+                    onPress={() => set.endTime ? toggleSetExpansion(index) : null}
+                    disabled={!set.endTime}
+                  >
                     <Text style={styles.setTitle}>Set {index + 1}</Text>
-                    {set.startTime && set.endTime && (
-                      <View style={styles.durationContainer}>
-                        <Text style={styles.durationLabel}>Duration:</Text>
-                        <Text style={styles.durationValue}>{getSetDuration(set)}</Text>
+                    {set.endTime && (
+                      <View style={styles.setHeaderRight}>
+                        {!expandedSets[index] && renderSetSummary(set)}
+                        <Text style={styles.expandCollapseIcon}>
+                          {expandedSets[index] ? '▼' : '▶'}
+                        </Text>
                       </View>
                     )}
-                  </View>
+                  </TouchableOpacity>
 
-                  <View style={styles.setControls}>
-                    {!set.startTime ? (
-                      <TouchableOpacity
-                        style={[styles.startButton, isSetInProgress && styles.disabledButton]}
-                        onPress={() => startSet(index)}
-                        disabled={isSetInProgress}
-                      >
-                        <Text style={[styles.buttonText, isSetInProgress && styles.disabledButtonText]}>Start Set</Text>
-                      </TouchableOpacity>
-                    ) : !set.endTime ? (
-                      <TouchableOpacity
-                        style={styles.endButton}
-                        onPress={() => endSet(index)}
-                      >
-                        <Text style={styles.buttonText}>Stop Set</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <View style={styles.setInputs}>
-                        <View style={styles.inputsContainer}>
-                          <View style={styles.column}>
-                            <View style={styles.inputGroup}>
-                              <Text style={styles.inputLabel}>Weight (kg)</Text>
-                              <TextInput
-                                style={styles.input}
-                                keyboardType="numeric"
-                                value={set.weight.toString()}
-                                onChangeText={(value) =>
-                                  updateSet(index, { weight: Number(value) || 0 })
-                                }
-                              />
+                  {(!set.endTime || expandedSets[index]) && (
+                    <View style={styles.setControls}>
+                      {!set.startTime ? (
+                        <TouchableOpacity
+                          style={[styles.startButton, isSetInProgress && styles.disabledButton]}
+                          onPress={() => startSet(index)}
+                          disabled={isSetInProgress}
+                        >
+                          <Text style={[styles.buttonText, isSetInProgress && styles.disabledButtonText]}>Start Set</Text>
+                        </TouchableOpacity>
+                      ) : !set.endTime ? (
+                        <TouchableOpacity
+                          style={styles.endButton}
+                          onPress={() => endSet(index)}
+                        >
+                          <Text style={styles.buttonText}>Stop Set</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <View style={styles.setInputs}>
+                          <View style={styles.inputsContainer}>
+                            <View style={styles.column}>
+                              <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Weight (kg)</Text>
+                                <TextInput
+                                  style={styles.input}
+                                  keyboardType="numeric"
+                                  value={set.weight.toString()}
+                                  onChangeText={(value) =>
+                                    updateSet(index, { weight: Number(value) || 0 })
+                                  }
+                                />
+                              </View>
+                              <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Partial Reps</Text>
+                                <TextInput
+                                  style={[styles.input, !set.failure && styles.disabledInput]}
+                                  keyboardType="numeric"
+                                  value={set.partialReps?.toString() || '0'}
+                                  onChangeText={(value) =>
+                                    updateSet(index, { partialReps: Number(value) || 0 })
+                                  }
+                                  editable={set.failure}
+                                />
+                              </View>
                             </View>
-                            <View style={styles.inputGroup}>
-                              <Text style={styles.inputLabel}>Partial Reps</Text>
-                              <TextInput
-                                style={[styles.input, !set.failure && styles.disabledInput]}
-                                keyboardType="numeric"
-                                value={set.partialReps?.toString() || '0'}
-                                onChangeText={(value) =>
-                                  updateSet(index, { partialReps: Number(value) || 0 })
-                                }
-                                editable={set.failure}
-                              />
+                            <View style={styles.column}>
+                              <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Reps</Text>
+                                <TextInput
+                                  style={styles.input}
+                                  keyboardType="numeric"
+                                  value={set.reps.toString()}
+                                  onChangeText={(value) =>
+                                    updateSet(index, { reps: Number(value) || 0 })
+                                  }
+                                />
+                              </View>
+                              <View style={[styles.inputGroup, styles.failureGroup]}>
+                                <Text style={styles.inputLabel}>Failure</Text>
+                                <Switch
+                                  value={set.failure}
+                                  onValueChange={(value) =>
+                                    updateSet(index, { failure: value })
+                                  }
+                                />
+                              </View>
                             </View>
                           </View>
-                          <View style={styles.column}>
-                            <View style={styles.inputGroup}>
-                              <Text style={styles.inputLabel}>Reps</Text>
-                              <TextInput
-                                style={styles.input}
-                                keyboardType="numeric"
-                                value={set.reps.toString()}
-                                onChangeText={(value) =>
-                                  updateSet(index, { reps: Number(value) || 0 })
-                                }
-                              />
-                            </View>
-                            <View style={[styles.inputGroup, styles.failureGroup]}>
-                              <Text style={styles.inputLabel}>Failure</Text>
-                              <Switch
-                                value={set.failure}
-                                onValueChange={(value) =>
-                                  updateSet(index, { failure: value })
-                                }
-                              />
-                            </View>
+                          <View style={styles.completeSetContainer}>
+                            <TouchableOpacity
+                              style={styles.completeSetButton}
+                              onPress={() => completeSet(index)}
+                            >
+                              <Text style={styles.buttonText}>Complete Set</Text>
+                            </TouchableOpacity>
                           </View>
                         </View>
-                        <View style={styles.completeSetContainer}>
-                          <TouchableOpacity
-                            style={styles.completeSetButton}
-                            onPress={() => completeSet(index)}
-                          >
-                            <Text style={styles.buttonText}>Complete Set</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    )}
-                  </View>
+                      )}
+                    </View>
+                  )}
                 </View>
               ))}
             </ScrollView>
@@ -345,10 +383,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
+  setHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   setTitle: {
     fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
     color: colors.text,
+  },
+  expandCollapseIcon: {
+    fontSize: typography.sizes.md,
+    color: colors.textSecondary,
+  },
+  setSummary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  summaryText: {
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
+    color: colors.text,
+  },
+  durationText: {
+    fontSize: typography.sizes.sm,
+    color: colors.textSecondary,
   },
   durationContainer: {
     flexDirection: 'row',
