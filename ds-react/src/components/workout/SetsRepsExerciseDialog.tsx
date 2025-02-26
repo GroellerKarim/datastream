@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
 import { ExerciseDefinitionResponse } from '../../constants/types';
-import { format, formatDuration, intervalToDuration } from 'date-fns';
+import { format, formatDuration, intervalToDuration, Duration } from 'date-fns';
 
 type ExerciseSet = {
   startTime: Date | null;
@@ -40,6 +40,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   const [restTimer, setRestTimer] = useState<string>('00:00');
   const [isSetInProgress, setIsSetInProgress] = useState(false);
   const [expandedSets, setExpandedSets] = useState<{[key: number]: boolean}>({});
+  const [activeSetTimer, setActiveSetTimer] = useState<string>('00:00');
 
   useEffect(() => {
     if (visible) {
@@ -54,6 +55,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
       setCurrentSet(null);
       setIsSetInProgress(false);
       setRestTimer('00:00');
+      setActiveSetTimer('00:00');
       setExpandedSets({0: true});
     }
   }, [visible]);
@@ -66,13 +68,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
           start: sets[currentSet].endTime!,
           end: new Date(),
         });
-        setRestTimer(
-          formatDuration(duration, {
-            format: ['minutes', 'seconds'],
-            zero: true,
-            delimiter: ':',
-          })
-        );
+        setRestTimer(formatTime(duration));
       }, 1000);
     }
     return () => {
@@ -81,6 +77,31 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
       }
     };
   }, [currentSet, sets]);
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    if (isSetInProgress && currentSet !== null && sets[currentSet].startTime) {
+      intervalId = setInterval(() => {
+        const duration = intervalToDuration({
+          start: sets[currentSet].startTime!,
+          end: new Date(),
+        });
+        setActiveSetTimer(formatTime(duration));
+      }, 1000);
+    }
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isSetInProgress, currentSet, sets]);
+
+  // Format duration to mm:ss
+  const formatTime = (duration: Duration) => {
+    const minutes = duration.minutes || 0;
+    const seconds = duration.seconds || 0;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   const addSet = () => {
     const newSetIndex = sets.length;
@@ -108,6 +129,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
     setSets(updatedSets);
     setCurrentSet(index);
     setExpandedSets(prev => ({...prev, [index]: true}));
+    setActiveSetTimer('00:00');
   };
 
   const endSet = (index: number) => {
@@ -220,12 +242,18 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
                           <Text style={[styles.buttonText, isSetInProgress && styles.disabledButtonText]}>Start Set</Text>
                         </TouchableOpacity>
                       ) : !set.endTime ? (
-                        <TouchableOpacity
-                          style={styles.endButton}
-                          onPress={() => endSet(index)}
-                        >
-                          <Text style={styles.buttonText}>Stop Set</Text>
-                        </TouchableOpacity>
+                        <View style={styles.activeSetContainer}>
+                          <View style={styles.activeSetTimer}>
+                            <Text style={styles.activeSetTimerLabel}>Active:</Text>
+                            <Text style={styles.activeSetTimerValue}>{activeSetTimer}</Text>
+                          </View>
+                          <TouchableOpacity
+                            style={styles.endButton}
+                            onPress={() => endSet(index)}
+                          >
+                            <Text style={styles.buttonText}>Stop Set</Text>
+                          </TouchableOpacity>
+                        </View>
                       ) : (
                         <View style={styles.setInputs}>
                           <View style={styles.inputsContainer}>
@@ -364,6 +392,28 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
     color: colors.primary,
+  },
+  activeSetContainer: {
+    gap: spacing.md,
+  },
+  activeSetTimer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceHover,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  activeSetTimerLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.text,
+    marginRight: spacing.sm,
+  },
+  activeSetTimerValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.dataOrange,
   },
   setsList: {
     flex: 1,
