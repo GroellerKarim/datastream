@@ -21,6 +21,8 @@ type Props = {
   onClose: () => void;
   onSelect: (exercise: ExerciseDefinitionResponse) => void;
   workoutTypeId: number;
+  isRestTimerActive?: boolean;
+  restTimerDisplay?: string;
 };
 
 const ExerciseSelectionDialog: React.FC<Props> = ({
@@ -28,6 +30,8 @@ const ExerciseSelectionDialog: React.FC<Props> = ({
   onClose,
   onSelect,
   workoutTypeId,
+  isRestTimerActive = false,
+  restTimerDisplay = '00:00',
 }) => {
   const { user } = useUser();
   const [recentExercises, setRecentExercises] = useState<ExerciseDefinitionResponse[]>([]);
@@ -120,6 +124,14 @@ const ExerciseSelectionDialog: React.FC<Props> = ({
             </TouchableOpacity>
           </View>
 
+          {/* Rest Timer Display */}
+          {isRestTimerActive && (
+            <View style={styles.restTimerContainer}>
+              <Text style={styles.restTimerLabel}>Rest Time:</Text>
+              <Text style={styles.restTimerValue}>{restTimerDisplay}</Text>
+            </View>
+          )}
+
           <TextInput
             style={styles.searchInput}
             placeholder="Search exercises..."
@@ -198,6 +210,28 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xl,
     color: colors.textSecondary,
   },
+  restTimerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  restTimerLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.textSecondary,
+    marginRight: spacing.sm,
+  },
+  restTimerValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
+  },
   searchInput: {
     backgroundColor: colors.surface,
     padding: spacing.md,
@@ -231,6 +265,18 @@ const styles = StyleSheet.create({
   list: {
     paddingVertical: spacing.md,
   },
+  sectionHeader: {
+    backgroundColor: colors.background,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  sectionTitle: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.semibold,
+    color: colors.textSecondary,
+  },
   exerciseItem: {
     backgroundColor: colors.surface,
     padding: spacing.md,
@@ -251,25 +297,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
-    backgroundColor: colors.background,
   },
   errorText: {
     color: colors.error,
     fontSize: typography.sizes.md,
     textAlign: 'center',
-  },
-  sectionHeader: {
-    backgroundColor: colors.background,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  sectionTitle: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
-    color: colors.textSecondary,
   },
 });
 

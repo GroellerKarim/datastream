@@ -1,17 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography, borderRadius, shadows } from '../../constants/theme';
 import { ExerciseType, DistanceUnit, WorkoutTypeResponse, ExerciseDefinitionResponse } from '../../constants/types';
 import { API_ENDPOINTS } from '../../config/api';
 import axios from 'axios';
-import { format, formatDuration, intervalToDuration } from 'date-fns';
+import { format, formatDuration, intervalToDuration, Duration } from 'date-fns';
 import ExerciseSelectionDialog from '../../components/workout/ExerciseSelectionDialog';
 import SetsRepsExerciseDialog from '../../components/workout/SetsRepsExerciseDialog';
 import DistanceExerciseDialog from '../../components/workout/DistanceExerciseDialog';
 import SetsTimeExerciseDialog from '../../components/workout/SetsTimeExerciseDialog';
 import { useUser } from '../../context/UserContext';
 import { useNavigation } from '@react-navigation/native';
+
+// Define a type for the rest timing state
+type RestTimingState = {
+  lastSetEndTime: Date | null;  
+  accumulatedRestTime: number;  
+  isRestActive: boolean;       
+  currentRestStartTime: Date | null;  
+};
+
+// Format duration to mm:ss
+const formatTime = (duration: Duration) => {
+  const minutes = duration.minutes || 0;
+  const seconds = duration.seconds || 0;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+// Format milliseconds to mm:ss
+const formatMsToTime = (ms: number) => {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+};
 
 type Props = {
   navigation: any; // Replace with proper navigation type
@@ -37,6 +60,24 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
   const [selectedExercise, setSelectedExercise] = useState<ExerciseDefinitionResponse | null>(null);
   const [trackedExercises, setTrackedExercises] = useState<TrackedExercise[]>([]);
   const [error, setError] = useState<string | null>(null);
+  
+  // New rest timer state
+  const [restTimingState, setRestTimingState] = useState<RestTimingState>({
+    lastSetEndTime: null,
+    accumulatedRestTime: 0,
+    isRestActive: false,
+    currentRestStartTime: null
+  });
+  
+  // Display state for the rest timer
+  const [restTimerDisplay, setRestTimerDisplay] = useState<string>('00:00');
+  
+  // Initial state to pass to exercise dialogs
+  const [exerciseDialogInitialState, setExerciseDialogInitialState] = useState<{
+    previousExerciseEndTime: Date | null,
+    accumulatedRestTime: number,
+    isRestActive: boolean
+  } | null>(null);
 
   useEffect(() => {
     const fetchWorkoutTypes = async () => {
@@ -83,29 +124,89 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
       }
     };
   }, [workoutStartTime]);
+  
+  // Rest timer effect
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    
+    if (restTimingState.isRestActive && restTimingState.currentRestStartTime) {
+      intervalId = setInterval(() => {
+        const now = new Date();
+        const elapsedSinceRestStart = now.getTime() - restTimingState.currentRestStartTime!.getTime();
+        const totalRestMs = restTimingState.accumulatedRestTime + elapsedSinceRestStart;
+        
+        const duration = intervalToDuration({
+          start: 0,
+          end: totalRestMs,
+        });
+        
+        setRestTimerDisplay(formatTime(duration));
+      }, 1000);
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [restTimingState.isRestActive, restTimingState.currentRestStartTime]);
 
   const handleWorkoutTypeSelect = (workoutType: WorkoutTypeResponse) => {
     setSelectedWorkoutType(workoutType);
     setWorkoutStartTime(new Date());
   };
+  
+  // Function to start the rest timer
+  const startRestTimerBetweenExercises = (lastSetEndTime: Date) => {
+    setRestTimingState({
+      lastSetEndTime: lastSetEndTime,
+      accumulatedRestTime: 0,
+      isRestActive: true,
+      currentRestStartTime: new Date()
+    });
+  };
+  
+  // Function to calculate total rest time
+  const calculateTotalRestTime = (): number => {
+    const { accumulatedRestTime, isRestActive, currentRestStartTime } = restTimingState;
+    
+    if (!isRestActive || !currentRestStartTime) {
+      return accumulatedRestTime;
+    }
+    
+    const currentRestDuration = new Date().getTime() - currentRestStartTime.getTime();
+    return accumulatedRestTime + currentRestDuration;
+  };
 
   const handleExerciseSelect = (exercise: ExerciseDefinitionResponse) => {
     setSelectedExercise(exercise);
     setShowExerciseSelection(false);
+    
+    // Set initial state for the new exercise tracking with rest timing information
+    setExerciseDialogInitialState({
+      previousExerciseEndTime: restTimingState.lastSetEndTime,
+      accumulatedRestTime: calculateTotalRestTime(),
+      isRestActive: restTimingState.isRestActive
+    });
+    
     setShowExerciseTracking(true);
   };
 
   const handleSetsRepsExerciseSave = (sets: any[]) => {
     if (selectedExercise) {
+      const endTime = new Date(Math.max(...sets.map(s => s.endTime?.getTime() || Date.now())));
       const trackedExercise: TrackedExercise = {
         exerciseDefinition: selectedExercise,
         sets,
         startTime: new Date(Math.min(...sets.map(s => s.startTime?.getTime() || Date.now()))),
-        endTime: new Date(Math.max(...sets.map(s => s.endTime?.getTime() || Date.now()))),
+        endTime,
       };
       setTrackedExercises([...trackedExercises, trackedExercise]);
       setShowExerciseTracking(false);
       setSelectedExercise(null);
+      
+      // Start the rest timer for the next exercise
+      startRestTimerBetweenExercises(endTime);
     }
   };
 
@@ -122,20 +223,27 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
       setTrackedExercises([...trackedExercises, trackedExercise]);
       setShowExerciseTracking(false);
       setSelectedExercise(null);
+      
+      // Start the rest timer for the next exercise
+      startRestTimerBetweenExercises(now);
     }
   };
 
   const handleSetsTimeExerciseSave = (sets: any[]) => {
     if (selectedExercise) {
+      const endTime = new Date(Math.max(...sets.map(s => s.endTime?.getTime() || Date.now())));
       const trackedExercise: TrackedExercise = {
         exerciseDefinition: selectedExercise,
         sets,
         startTime: new Date(Math.min(...sets.map(s => s.startTime?.getTime() || Date.now()))),
-        endTime: new Date(Math.max(...sets.map(s => s.endTime?.getTime() || Date.now()))),
+        endTime,
       };
       setTrackedExercises([...trackedExercises, trackedExercise]);
       setShowExerciseTracking(false);
       setSelectedExercise(null);
+      
+      // Start the rest timer for the next exercise
+      startRestTimerBetweenExercises(endTime);
     }
   };
 
@@ -146,11 +254,12 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
       workoutTypeId: selectedWorkoutType.id,
       startTime: workoutStartTime.toISOString(),
       endTime: new Date().toISOString(),
-      exercises: trackedExercises.map(exercise => {
+      exercises: trackedExercises.map((exercise, index) => {
         const baseExercise = {
           exerciseDefinitionId: exercise.exerciseDefinition.id,
           startTime: exercise.startTime.toISOString(),
           endTime: exercise.endTime?.toISOString(),
+          order: index + 1,
         };
 
         switch (exercise.exerciseDefinition.type) {
@@ -158,13 +267,25 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
           case ExerciseType.SETS_TIME:
             return {
               ...baseExercise,
-              sets: exercise.sets,
+              details: {
+                sets: exercise.sets?.map((set, setIndex) => ({
+                  startTime: set.startTime.toISOString(),
+                  endTime: set.endTime.toISOString(),
+                  isFailure: set.failure,
+                  repetitions: set.reps || 0,
+                  partialRepetitions: set.partialReps || 0,
+                  weight: set.weight || 0,
+                  order: setIndex + 1
+                }))
+              }
             };
           case ExerciseType.DISTANCE:
             return {
               ...baseExercise,
-              distance: exercise.distance,
-              distanceUnit: exercise.distanceUnit,
+              details: {
+                distance: exercise.distance,
+                distanceUnit: exercise.distanceUnit,
+              }
             };
           default:
             return baseExercise;
@@ -237,6 +358,14 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.workoutTitle}>{selectedWorkoutType.name}</Text>
               <Text style={styles.timer}>{duration}</Text>
             </View>
+            
+            {/* Global rest timer */}
+            {restTimingState.isRestActive && (
+              <View style={styles.globalRestTimer}>
+                <Text style={styles.restTimerLabel}>Rest Time:</Text>
+                <Text style={styles.restTimerValue}>{restTimerDisplay}</Text>
+              </View>
+            )}
 
             {selectedExercise && (
               <View style={[styles.exerciseCard, styles.currentExerciseCard]}>
@@ -285,6 +414,8 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
         onClose={() => setShowExerciseSelection(false)}
         onSelect={handleExerciseSelect}
         workoutTypeId={selectedWorkoutType?.id || 0}
+        isRestTimerActive={restTimingState.isRestActive}
+        restTimerDisplay={restTimerDisplay}
       />
 
       {selectedExercise?.type === ExerciseType.SETS_REPS && (
@@ -293,6 +424,7 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
           onClose={() => setShowExerciseTracking(false)}
           onSave={handleSetsRepsExerciseSave}
           exercise={selectedExercise}
+          initialRestState={exerciseDialogInitialState}
         />
       )}
 
@@ -302,6 +434,7 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
           onClose={() => setShowExerciseTracking(false)}
           onSave={handleDistanceExerciseSave}
           exercise={selectedExercise}
+          initialRestState={exerciseDialogInitialState}
         />
       )}
 
@@ -311,6 +444,7 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
           onClose={() => setShowExerciseTracking(false)}
           onSave={handleSetsTimeExerciseSave}
           exercise={selectedExercise}
+          initialRestState={exerciseDialogInitialState}
         />
       )}
     </SafeAreaView>
@@ -372,6 +506,29 @@ const styles = StyleSheet.create({
   timer: {
     fontSize: typography.sizes.lg,
     fontWeight: typography.weights.semibold,
+    color: colors.primary,
+  },
+  globalRestTimer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+    ...shadows.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  restTimerLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.textSecondary,
+    marginRight: spacing.sm,
+  },
+  restTimerValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
     color: colors.primary,
   },
   exerciseCard: {

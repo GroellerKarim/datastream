@@ -28,6 +28,11 @@ type Props = {
   onClose: () => void;
   onSave: (sets: ExerciseSet[]) => void;
   exercise: ExerciseDefinitionResponse;
+  initialRestState?: {
+    previousExerciseEndTime: Date | null,
+    accumulatedRestTime: number,
+    isRestActive: boolean
+  } | null;
 };
 
 const SetsRepsExerciseDialog: React.FC<Props> = ({
@@ -35,6 +40,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
   onClose,
   onSave,
   exercise,
+  initialRestState = null,
 }) => {
   const [sets, setSets] = useState<ExerciseSet[]>([]);
   const [currentSet, setCurrentSet] = useState<number | null>(null);
@@ -48,6 +54,7 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
 
   useEffect(() => {
     if (visible) {
+      // Initialize the basic set
       setSets([{
         startTime: null,
         endTime: null,
@@ -62,11 +69,26 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
       setRestTimer('00:00');
       setActiveSetTimer('00:00');
       setExpandedSets({0: true});
-      setIsRestActive(false);
-      restStartTimeRef.current = null;
-      accumulatedRestTimeRef.current = 0;
+      
+      // Initialize the rest timer if we have state from a previous exercise
+      if (initialRestState && initialRestState.isRestActive && initialRestState.previousExerciseEndTime) {
+        restStartTimeRef.current = initialRestState.previousExerciseEndTime;
+        accumulatedRestTimeRef.current = initialRestState.accumulatedRestTime;
+        setIsRestActive(true);
+        
+        // Log for debugging
+        console.log('Initialized with rest from previous exercise:', {
+          previousExerciseEndTime: initialRestState.previousExerciseEndTime,
+          accumulatedRestTime: initialRestState.accumulatedRestTime,
+          formattedTime: formatMsToTime(initialRestState.accumulatedRestTime)
+        });
+      } else {
+        restStartTimeRef.current = null;
+        accumulatedRestTimeRef.current = 0;
+        setIsRestActive(false);
+      }
     }
-  }, [visible]);
+  }, [visible, initialRestState]);
 
   // Rest timer effect
   useEffect(() => {
@@ -159,9 +181,16 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
     const updatedSets = [...sets];
     const now = new Date();
     
-    // Calculate rest time from previous set if available
+    // Calculate rest time from previous set or previous exercise
     if (index > 0 && updatedSets[index - 1].endTime) {
-      // Rest time is already accumulated in our ref
+      // Rest time from previous set
+      updatedSets[index] = {
+        ...updatedSets[index],
+        startTime: now,
+        restTime: accumulatedRestTimeRef.current,
+      };
+    } else if (index === 0 && initialRestState?.previousExerciseEndTime) {
+      // First set with rest time from previous exercise
       updatedSets[index] = {
         ...updatedSets[index],
         startTime: now,
@@ -169,9 +198,11 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
       };
       
       // Log for debugging
-      console.log('Set started with rest time:', accumulatedRestTimeRef.current, 
-                  formatMsToTime(accumulatedRestTimeRef.current));
+      console.log('First set started with rest time from previous exercise:', 
+                 accumulatedRestTimeRef.current, 
+                 formatMsToTime(accumulatedRestTimeRef.current));
     } else {
+      // No rest time
       updatedSets[index] = {
         ...updatedSets[index],
         startTime: now,

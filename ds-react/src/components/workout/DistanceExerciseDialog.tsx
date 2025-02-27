@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,18 @@ import {
 import { colors, spacing, typography, borderRadius } from '../../constants/theme';
 import { ExerciseDefinitionResponse, DistanceUnit } from '../../constants/types';
 import { Picker } from '@react-native-picker/picker';
+import { intervalToDuration, Duration } from 'date-fns';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
   onSave: (data: { distance: number; unit: DistanceUnit }) => void;
   exercise: ExerciseDefinitionResponse;
+  initialRestState?: {
+    previousExerciseEndTime: Date | null,
+    accumulatedRestTime: number,
+    isRestActive: boolean
+  } | null;
 };
 
 const DistanceExerciseDialog: React.FC<Props> = ({
@@ -24,9 +30,81 @@ const DistanceExerciseDialog: React.FC<Props> = ({
   onClose,
   onSave,
   exercise,
+  initialRestState = null,
 }) => {
   const [distance, setDistance] = useState<string>('');
   const [unit, setUnit] = useState<DistanceUnit>(DistanceUnit.KILOMETERS);
+  const [isRestActive, setIsRestActive] = useState(false);
+  const [restTimer, setRestTimer] = useState<string>('00:00');
+  const restStartTimeRef = useRef<Date | null>(null);
+  const accumulatedRestTimeRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (visible) {
+      setDistance('');
+      setUnit(DistanceUnit.KILOMETERS);
+      
+      // Initialize the rest timer if we have state from a previous exercise
+      if (initialRestState && initialRestState.isRestActive && initialRestState.previousExerciseEndTime) {
+        restStartTimeRef.current = initialRestState.previousExerciseEndTime;
+        accumulatedRestTimeRef.current = initialRestState.accumulatedRestTime;
+        setIsRestActive(true);
+        
+        // Log for debugging
+        console.log('Distance dialog initialized with rest from previous exercise:', {
+          previousExerciseEndTime: initialRestState.previousExerciseEndTime,
+          accumulatedRestTime: initialRestState.accumulatedRestTime,
+          formattedTime: formatMsToTime(initialRestState.accumulatedRestTime)
+        });
+      } else {
+        restStartTimeRef.current = null;
+        accumulatedRestTimeRef.current = 0;
+        setIsRestActive(false);
+      }
+    }
+  }, [visible, initialRestState]);
+
+  // Rest timer effect
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    
+    if (isRestActive && restStartTimeRef.current) {
+      intervalId = setInterval(() => {
+        const now = new Date();
+        const baseTime = restStartTimeRef.current!;
+        const elapsedMs = now.getTime() - baseTime.getTime();
+        const totalRestMs = accumulatedRestTimeRef.current + elapsedMs;
+        
+        const duration = intervalToDuration({
+          start: 0,
+          end: totalRestMs,
+        });
+        
+        setRestTimer(formatTime(duration));
+      }, 1000);
+    }
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isRestActive]);
+
+  // Format duration to mm:ss
+  const formatTime = (duration: Duration) => {
+    const minutes = duration.minutes || 0;
+    const seconds = duration.seconds || 0;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Format milliseconds to mm:ss
+  const formatMsToTime = (ms: number) => {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   const handleSave = () => {
     const distanceValue = parseFloat(distance);
@@ -44,6 +122,14 @@ const DistanceExerciseDialog: React.FC<Props> = ({
               <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Rest Timer Display */}
+          {isRestActive && (
+            <View style={styles.restTimerContainer}>
+              <Text style={styles.restTimerLabel}>Rest Time:</Text>
+              <Text style={styles.restTimerValue}>{restTimer}</Text>
+            </View>
+          )}
 
           <ScrollView style={styles.form}>
             <View style={styles.inputGroup}>
@@ -119,6 +205,28 @@ const styles = StyleSheet.create({
   closeText: {
     fontSize: typography.sizes.xl,
     color: colors.textSecondary,
+  },
+  restTimerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+  },
+  restTimerLabel: {
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.medium,
+    color: colors.textSecondary,
+    marginRight: spacing.sm,
+  },
+  restTimerValue: {
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    color: colors.primary,
   },
   form: {
     flex: 1,
