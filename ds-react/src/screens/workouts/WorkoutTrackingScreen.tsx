@@ -205,8 +205,16 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
       setShowExerciseTracking(false);
       setSelectedExercise(null);
       
-      // Start the rest timer for the next exercise
-      startRestTimerBetweenExercises(endTime);
+      // Don't reset the rest timer, continue with the current rest timing state
+      // Only update lastSetEndTime if the rest timer isn't already active
+      if (!restTimingState.isRestActive) {
+        setRestTimingState({
+          ...restTimingState,
+          lastSetEndTime: endTime,
+          isRestActive: true,
+          currentRestStartTime: endTime
+        });
+      }
     }
   };
 
@@ -224,8 +232,16 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
       setShowExerciseTracking(false);
       setSelectedExercise(null);
       
-      // Start the rest timer for the next exercise
-      startRestTimerBetweenExercises(now);
+      // Don't reset the rest timer, continue with the current rest timing state
+      // Only update lastSetEndTime if the rest timer isn't already active
+      if (!restTimingState.isRestActive) {
+        setRestTimingState({
+          ...restTimingState,
+          lastSetEndTime: now,
+          isRestActive: true,
+          currentRestStartTime: now
+        });
+      }
     }
   };
 
@@ -242,8 +258,16 @@ const WorkoutTrackingScreen: React.FC<Props> = ({ navigation }) => {
       setShowExerciseTracking(false);
       setSelectedExercise(null);
       
-      // Start the rest timer for the next exercise
-      startRestTimerBetweenExercises(endTime);
+      // Don't reset the rest timer, continue with the current rest timing state
+      // Only update lastSetEndTime if the rest timer isn't already active
+      if (!restTimingState.isRestActive) {
+        setRestTimingState({
+          ...restTimingState,
+          lastSetEndTime: endTime,
+          isRestActive: true,
+          currentRestStartTime: endTime
+        });
+      }
     }
   };
 
