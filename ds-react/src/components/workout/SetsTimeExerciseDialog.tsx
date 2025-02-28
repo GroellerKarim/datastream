@@ -231,10 +231,6 @@ const SetsTimeExerciseDialog: React.FC<Props> = ({
   };
 
   const completeSet = (index: number) => {
-    if (index === sets.length - 1) {
-      // Add a new set automatically when completing the last set
-      addSet();
-    }
     setCurrentSet(null);
   };
 
@@ -347,13 +343,31 @@ const SetsTimeExerciseDialog: React.FC<Props> = ({
           </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.completeExerciseButton}
-              onPress={() => onSave(sets)}
-              disabled={sets.length === 0 || sets.some(set => !set.endTime)}
-            >
-              <Text style={styles.buttonText}>Complete Exercise</Text>
-            </TouchableOpacity>
+            {sets.length > 0 && sets.every(set => set.endTime) ? (
+              <View style={styles.footerButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.addSetButton}
+                  onPress={addSet}
+                >
+                  <Text style={styles.buttonText}>Add Set</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.completeExerciseButton}
+                  onPress={() => onSave(sets)}
+                >
+                  <Text style={styles.buttonText}>Complete Exercise</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.completeExerciseButton}
+                onPress={() => onSave(sets)}
+                disabled={sets.length === 0 || sets.some(set => !set.endTime)}
+              >
+                <Text style={styles.buttonText}>Complete Exercise</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -528,6 +542,19 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.md,
     alignItems: 'center',
+    flex: 2,
+  },
+  footerButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  addSetButton: {
+    backgroundColor: colors.secondary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    flex: 1,
   },
   restTimeDisplay: {
     flexDirection: 'row',

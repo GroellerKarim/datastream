@@ -263,10 +263,6 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
     // Log completion time for debugging
     console.log('Set completed at:', completionTime, 'Rest time stored:', updatedSets[index].restTime);
     
-    if (index === sets.length - 1) {
-      addSet();
-    }
-    
     const nextSetIndex = index + 1;
     if (nextSetIndex < sets.length) {
       setExpandedSets(prev => ({...prev, [nextSetIndex]: true}));
@@ -487,13 +483,31 @@ const SetsRepsExerciseDialog: React.FC<Props> = ({
           </View>
 
           <View style={styles.footer}>
-            <TouchableOpacity
-              style={styles.completeExerciseButton}
-              onPress={() => onSave(sets)}
-              disabled={sets.length === 0 || sets.some(set => !set.endTime)}
-            >
-              <Text style={styles.buttonText}>Complete Exercise</Text>
-            </TouchableOpacity>
+            {sets.length > 0 && sets.every(set => set.endTime) ? (
+              <View style={styles.footerButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.addSetButton}
+                  onPress={addSet}
+                >
+                  <Text style={styles.buttonText}>Add Set</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={styles.completeExerciseButton}
+                  onPress={() => onSave(sets)}
+                >
+                  <Text style={styles.buttonText}>Complete Exercise</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.completeExerciseButton}
+                onPress={() => onSave(sets)}
+                disabled={sets.length === 0 || sets.some(set => !set.endTime)}
+              >
+                <Text style={styles.buttonText}>Complete Exercise</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
@@ -766,6 +780,19 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.md,
     marginTop: spacing.lg,
+    flex: 2,
+  },
+  footerButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+  },
+  addSetButton: {
+    backgroundColor: colors.secondary,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    flex: 1,
   },
   disabledButton: {
     backgroundColor: colors.surfaceHover,
