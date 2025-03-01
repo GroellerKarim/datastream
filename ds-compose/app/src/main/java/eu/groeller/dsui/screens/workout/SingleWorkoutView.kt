@@ -40,7 +40,7 @@ fun SingleWorkoutView(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${workout.name} on ${workout.date.dayOfMonth}.${workout.date.monthValue}",
+                text = "${workout.workoutType} on ${workout.date.dayOfMonth}.${workout.date.monthValue}",
                 fontSize = 24.sp,
                 modifier = Modifier.padding(vertical = 8.dp)
             )

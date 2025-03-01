@@ -17,7 +17,7 @@ data class WorkoutResponse(
     @Serializable(with = OffsetDateTimeSerializer::class)
     val date: OffsetDateTime,
     val exercises: Set<ExerciseRecordResponse>,
-    val name: String
+    val workoutType: String
 ) : Parcelable
 
 @Parcelize

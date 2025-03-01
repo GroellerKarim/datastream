@@ -85,7 +85,7 @@ fun WorkoutScreen(
                                 horizontalAlignment = Alignment.Start,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Text(workout.name)
+                                Text(workout.workoutType)
                             }
                         }
                     }
