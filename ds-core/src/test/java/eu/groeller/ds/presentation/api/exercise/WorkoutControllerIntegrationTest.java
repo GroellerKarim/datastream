@@ -5,6 +5,7 @@ import eu.groeller.ds.config.TestContainersConfig;
 import eu.groeller.ds.domain.exercise.ExerciseType;
 import eu.groeller.ds.presentation.request.exercise.*;
 import eu.groeller.ds.presentation.request.user.UserRequest;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,8 @@ class WorkoutControllerIntegrationTest {
     @BeforeEach
     void setUp() throws Exception {
         // Create a test user and get authentication token
-        UserRequest createRequest = new UserRequest("testuser", "test@workout.com", "password123");
+        String testEmail = "test" + UUID.randomUUID().toString() + "@workout.com"; // Define email as a variable to ensure consistency
+        UserRequest createRequest = new UserRequest("testuser" + UUID.randomUUID().toString(), testEmail, "password123");
         MvcResult result = mockMvc.perform(post("/api/v1/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
@@ -51,14 +53,15 @@ class WorkoutControllerIntegrationTest {
             System.out.println("Response body: " + result.getResponse().getContentAsString());
         }
 
-        // Login and get token
+        // Login and get token - Fix the email mismatch here
         mockMvc.perform(post("/api/v1/users/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(new eu.groeller.ds.presentation.request.user.UserLoginRequest("test@example.com", "password123"))))
+                        .content(objectMapper.writeValueAsString(new eu.groeller.ds.presentation.request.user.UserLoginRequest(testEmail, "password123"))))
                 .andExpect(status().isOk())
                 .andDo(mvcResult -> {
                     String response = mvcResult.getResponse().getContentAsString();
                     authToken = objectMapper.readTree(response).get("token").asText();
+                    System.out.println("Successfully obtained auth token: " + (authToken != null && !authToken.isEmpty()));
                 });
     }
 
