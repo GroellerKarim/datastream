@@ -15,7 +15,10 @@ data class WorkoutResponse(
     val durationMs: Long,
     @TypeParceler<OffsetDateTime, OffsetDateTimeParcelizer>()
     @Serializable(with = OffsetDateTimeSerializer::class)
-    val date: OffsetDateTime,
+    val endTime: OffsetDateTime,
+    @TypeParceler<OffsetDateTime, OffsetDateTimeParcelizer>()
+    @Serializable(with = OffsetDateTimeSerializer::class)
+    val startTime: OffsetDateTime,
     val exercises: Set<ExerciseRecordResponse>,
     val workoutType: String
 ) : Parcelable
