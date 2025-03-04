@@ -9,7 +9,8 @@ import java.time.OffsetDateTime
 data class Workout(
     val id: Long,
     val durationMs: Long,
-    val date: OffsetDateTime,
+    val startTime: OffsetDateTime,
+    val endTime: OffsetDateTime,
     val exercises: Set<Exercise>,
     val workoutType: String
 ) 
