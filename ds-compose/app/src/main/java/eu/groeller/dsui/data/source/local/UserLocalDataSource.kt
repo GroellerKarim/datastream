@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.emptyPreferences
 import eu.groeller.datastreamui.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -29,7 +30,7 @@ class UserLocalDataSource(
     val userFlow: Flow<LocalUserState> = dataStore.data
         .catch { exception ->
             if (exception is IOException) {
-                emit(Preferences.empty())
+                emit(emptyPreferences())
             } else {
                 throw exception
             }
