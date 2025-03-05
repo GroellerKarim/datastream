@@ -8,7 +8,7 @@ import java.time.OffsetDateTime
 @Serializable
 data class CreateWorkoutRequest(
     val type: String,
-    val exercises: List<ExerciseRecordRequest>,
+    val exercises: List<CreateExerciseRequest>,
     @Serializable(with = OffsetDateTimeSerializer::class)
     val startTime: OffsetDateTime,
     @Serializable(with = OffsetDateTimeSerializer::class)
