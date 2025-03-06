@@ -4,19 +4,19 @@ package eu.groeller.dsui.domain.model
  * Represents the unit used for distance measurements in exercises.
  * This corresponds to the backend's DistanceUnit enum.
  */
-enum class DistanceUnitEnum {
+enum class DistanceUnitEnum(val abbreviation: String) {
     /**
      * Distance measured in meters
      */
-    METERS,
+    METERS("m"),
     
     /**
      * Distance measured in kilometers
      */
-    KILOMETERS,
+    KILOMETERS("km"),
     
     /**
      * Distance measured in miles
      */
-    MILES
+    MILES("mi")
 } 
