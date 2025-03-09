@@ -9,10 +9,10 @@ import eu.groeller.dsui.domain.repository.IWorkoutRepository
 class CreateWorkoutTypeUseCase(private val workoutRepository: IWorkoutRepository) {
     
     /**
-     * Execute the use case to create a new workout type.
-     *
-     * @param name The name of the workout type to create
-     * @return Result containing the created workout type if successful, error otherwise
+     * Creates a new workout type with the given name.
+     * 
+     * @param name The name of the workout type.
+     * @return Result containing the created workout type or an error.
      */
     suspend operator fun invoke(name: String): Result<WorkoutType> {
         // Validation logic
