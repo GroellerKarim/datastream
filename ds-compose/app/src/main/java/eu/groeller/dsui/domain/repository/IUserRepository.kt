@@ -49,6 +49,13 @@ interface IUserRepository {
      * @return Result containing User if valid, error otherwise
      */
     suspend fun validateToken(token: String): Result<User>
+    
+    /**
+     * Get the current authenticated user.
+     * 
+     * @return Result containing the current user if authenticated, null if not authenticated, or error if failed
+     */
+    suspend fun getCurrentUser(): Result<User?>
 }
 
 /**

@@ -2,6 +2,8 @@ package eu.groeller.dsui.domain.repository
 
 import eu.groeller.dsui.domain.model.Workout
 import eu.groeller.dsui.domain.model.WorkoutType
+import eu.groeller.dsui.presentation.model.ExerciseDetailsUI
+import java.time.OffsetDateTime
 
 /**
  * Repository interface for workout-related operations.
@@ -32,6 +34,22 @@ interface IWorkoutRepository {
      * @return Result containing the created workout with server-assigned ID if successful, error otherwise
      */
     suspend fun createWorkout(workout: Workout): Result<Workout>
+    
+    /**
+     * Create a new workout with individual parameters.
+     * 
+     * @param workoutType The type/name of the workout.
+     * @param startTime The start time of the workout.
+     * @param endTime The end time of the workout.
+     * @param exercises List of exercises in the workout, represented as pairs of exerciseDefinitionId and details.
+     * @return Result containing the created workout with server-assigned ID if successful, error otherwise
+     */
+    suspend fun createWorkout(
+        workoutType: String,
+        startTime: OffsetDateTime,
+        endTime: OffsetDateTime,
+        exercises: List<Pair<Long, Pair<ExerciseDetailsUI, Pair<OffsetDateTime, OffsetDateTime>>>>
+    ): Result<Workout>
     
     /**
      * Get all available workout types.
