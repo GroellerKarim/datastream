@@ -1,6 +1,6 @@
 package eu.groeller.ds.presentation.api.exercise;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import eu.groeller.ds.config.TestContainersConfig;
 import eu.groeller.ds.domain.exercise.ExerciseType;
 import eu.groeller.ds.presentation.request.exercise.CreateExerciseDefinitionRequest;
@@ -9,8 +9,8 @@ import eu.groeller.ds.presentation.request.user.UserRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;

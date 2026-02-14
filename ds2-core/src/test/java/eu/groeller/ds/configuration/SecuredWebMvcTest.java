@@ -5,7 +5,7 @@ import eu.groeller.ds.configuration.security.PasswordConfig;
 import eu.groeller.ds.configuration.security.SecurityConfig;
 import eu.groeller.ds.service.security.CustomUserDetailsService;
 import eu.groeller.ds.service.security.JwtService;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.AliasFor;
 

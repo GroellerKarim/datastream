@@ -35,7 +35,7 @@ public class JwtService {
 
     public String validateTokenAndGetEmail(String token) {
         log.debug("Validating authentication token...");
-        Claims claims = Jwts.parserBuilder()
+        Claims claims = Jwts.parser()
                 .setSigningKey(Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes()))
                 .build()
                 .parseClaimsJws(token)
