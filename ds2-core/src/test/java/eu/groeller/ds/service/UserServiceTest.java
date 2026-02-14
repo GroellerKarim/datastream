@@ -2,115 +2,92 @@ package eu.groeller.ds.service;
 
 import eu.groeller.ds.domain.User;
 import eu.groeller.ds.persistence.user.UserRepository;
-import eu.groeller.ds.presentation.request.user.UserRequest;
-import eu.groeller.ds.service.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.time.Instant;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 public class UserServiceTest {
 
     UserRepository mockUserRepository;
-    PasswordEncoder mockPasswordEncoder;
-    JwtService mockJwtService;
     UserService userService;
 
     @BeforeEach
     void setUp() {
         mockUserRepository = mock(UserRepository.class);
-        mockPasswordEncoder = mock(PasswordEncoder.class);
-        mockJwtService = mock(JwtService.class);
-        when(mockPasswordEncoder.encode(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
-        userService = new UserService(mockUserRepository, mockPasswordEncoder, mockJwtService);
+        userService = new UserService(mockUserRepository);
+    }
+
+    private JwtAuthenticationToken createMockAuthToken(String subject, String username, String email) {
+        Jwt jwt = Jwt.withTokenValue("mock-token")
+                .header("alg", "RS256")
+                .subject(subject)
+                .claim("preferred_username", username)
+                .claim("email", email)
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .build();
+        return new JwtAuthenticationToken(jwt);
     }
 
     @Test
-    void createUser_WhenRequestIsNull_ThrowsNullPointerException() {
-        assertThrows(NullPointerException.class, () -> userService.createUser(null));
-    }
+    void resolveUser_WhenUserExists_ShouldReturnExistingUser() {
+        var existingUser = new User("testuser", "test@example.com", "kc-123");
+        when(mockUserRepository.findByKeycloakId("kc-123")).thenReturn(Optional.of(existingUser));
 
-    @Test
-    void createUser_WhenUsernameIsNull_ThrowsNullPointerException() {
-        var request = new UserRequest(null, "test@example.com", "password");
+        var authToken = createMockAuthToken("kc-123", "testuser", "test@example.com");
+        var result = userService.resolveUser(authToken);
 
-        assertThrows(NullPointerException.class, () -> userService.createUser(request));
-    }
-
-    @Test
-    void createUser_WhenUsernameIsBlank_ThrowsIllegalArgumentException() {
-        var request = new UserRequest("", "test@example.com", "password");
-
-        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
-    }
-
-    @Test
-    void createUser_WhenEmailIsNull_ThrowsNullPointerException() {
-        var request = new UserRequest("username", null, "password");
-
-        assertThrows(NullPointerException.class, () -> userService.createUser(request));
-    }
-
-    @Test
-    void createUser_WhenEmailIsBlank_ThrowsIllegalArgumentException() {
-        var request = new UserRequest("username", "", "password");
-
-        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
-    }
-
-    @Test
-    void createUser_WhenPasswordIsNull_ThrowsNullPointerException() {
-        var request = new UserRequest("username", "test@example.com", null);
-
-        assertThrows(NullPointerException.class, () -> userService.createUser(request));
-    }
-
-    @Test
-    void createUser_WhenPasswordIsBlank_ThrowsIllegalArgumentException() {
-        var request = new UserRequest("username", "test@example.com", "");
-
-        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
-    }
-
-    @Test
-    void createUser_WhenEmailExists_ThrowsIllegalArgumentException() {
-        var request = new UserRequest("username", "test@example.com", "password");
-        when(mockUserRepository.existsByEmail("test@example.com")).thenReturn(true);
-
-        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
-    }
-
-    @Test
-    void createUser_WhenUsernameExists_ThrowsIllegalArgumentException() {
-        var request = new UserRequest("username", "test@example.com", "password");
-        when(mockUserRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(mockUserRepository.existsByUsername("username")).thenReturn(true);
-
-        assertThrows(IllegalArgumentException.class, () -> userService.createUser(request));
-    }
-
-    @Test
-    void createUser_WhenValidRequest_ReturnsCreatedUser() {
-        var request = new UserRequest("username", "test@example.com", "password");
-        when(mockUserRepository.existsByEmail("test@example.com")).thenReturn(false);
-        when(mockUserRepository.existsByUsername("username")).thenReturn(false);
-
-        var expectedUser = new User("username", "test@example.com", "password");
-        when(mockUserRepository.save(any(User.class))).thenReturn(expectedUser);
-
-        var result = userService.createUser(request);
-
-        assertNotNull(result);
-        assertEquals("username", result.getUsername());
+        assertEquals("testuser", result.getUsername());
         assertEquals("test@example.com", result.getEmail());
-        assertEquals("password", result.getPassword());
+        assertEquals("kc-123", result.getKeycloakId());
+        verify(mockUserRepository, never()).save(any());
+    }
 
+    @Test
+    void resolveUser_WhenUserDoesNotExist_ShouldCreateNewUser() {
+        when(mockUserRepository.findByKeycloakId("kc-new-456")).thenReturn(Optional.empty());
+        when(mockUserRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var authToken = createMockAuthToken("kc-new-456", "newuser", "new@example.com");
+        var result = userService.resolveUser(authToken);
+
+        assertEquals("newuser", result.getUsername());
+        assertEquals("new@example.com", result.getEmail());
+        assertEquals("kc-new-456", result.getKeycloakId());
         verify(mockUserRepository).save(any(User.class));
     }
 
+    @Test
+    void resolveUser_WhenUsernameIsMissing_ShouldFallbackToSubject() {
+        when(mockUserRepository.findByKeycloakId("kc-no-username")).thenReturn(Optional.empty());
+        when(mockUserRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        var authToken = createMockAuthToken("kc-no-username", null, "fallback@example.com");
+        var result = userService.resolveUser(authToken);
+
+        assertEquals("kc-no-username", result.getUsername());
+        assertEquals("fallback@example.com", result.getEmail());
+        verify(mockUserRepository).save(any(User.class));
+    }
+
+    @Test
+    void resolveUser_WhenEmailIsMissing_ShouldGenerateFallbackEmail() {
+        when(mockUserRepository.findByKeycloakId("kc-no-email")).thenReturn(Optional.empty());
+        when(mockUserRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var authToken = createMockAuthToken("kc-no-email", "someuser", null);
+        var result = userService.resolveUser(authToken);
+
+        assertEquals("someuser", result.getUsername());
+        assertEquals("someuser@keycloak.local", result.getEmail());
+        verify(mockUserRepository).save(any(User.class));
+    }
 }

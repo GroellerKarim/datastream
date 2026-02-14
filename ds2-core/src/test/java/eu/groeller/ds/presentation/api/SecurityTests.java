@@ -48,14 +48,13 @@ public class SecurityTests {
             "GET /v3/api-docs.yaml",
             "GET /swagger-ui.html",
             "GET /swagger-ui/**",
-            "POST /api/v1/users/register",
-            "POST /api/v1/users/login"
-    );
+            "GET /actuator/health");
 
     protected Stream<EndpointInfo> provideEndpoints() {
         List<EndpointInfo> endpoints = new ArrayList<>();
 
-        // Find all classes annotated with @RestController or @Controller across all packages
+        // Find all classes annotated with @RestController or @Controller across all
+        // packages
         Reflections reflections = new Reflections(new ConfigurationBuilder()
                 .setUrls(ClasspathHelper.forJavaClassPath())
                 .setScanners(Scanners.TypesAnnotated));
@@ -104,8 +103,8 @@ public class SecurityTests {
 
                     // Convert pattern to regex
                     String patternRegex = patternParts[1]
-                            .replace("/**", "/.*")  // /** matches anything including slashes
-                            .replace("/*", "/[^/]*")  // /* matches anything except slashes
+                            .replace("/**", "/.*") // /** matches anything including slashes
+                            .replace("/*", "/[^/]*") // /* matches anything except slashes
                             .replace(".", "\\.")
                             .replace("?", "\\?");
 
@@ -191,22 +190,7 @@ public class SecurityTests {
             case POST -> org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                     .post(pattern)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(switch (pattern) {
-                        case "/api/v1/users/register" -> """
-                                {
-                                    "username": "testuser",
-                                    "email": "test@example.com",
-                                    "password": "password123"
-                                }
-                                """;
-                        case "/api/v1/users/login" -> """
-                                {
-                                    "email": "test@example.com",
-                                    "password": "password123"
-                                }
-                                """;
-                        default -> "{}";
-                    });
+                    .content("{}");
             case PUT -> org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                     .put(pattern)
                     .contentType(MediaType.APPLICATION_JSON)
@@ -223,8 +207,8 @@ public class SecurityTests {
         try {
             mockMvc.perform(requestBuilder)
                     .andExpect(result -> {
-                        int status = result.getResponse().getStatus();
-                        if (status == 401) {
+                        int statusCode = result.getResponse().getStatus();
+                        if (statusCode == 401) {
                             throw new AssertionError("Public endpoint " + endpoint + " returned 401 Unauthorized");
                         }
                     });
@@ -259,4 +243,4 @@ public class SecurityTests {
             return method + " " + pattern;
         }
     }
-} 
+}

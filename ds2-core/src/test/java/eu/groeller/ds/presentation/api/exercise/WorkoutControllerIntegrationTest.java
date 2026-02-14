@@ -5,8 +5,6 @@ import eu.groeller.ds.config.TestContainersConfig;
 import eu.groeller.ds.domain.exercise.DistanceUnit;
 import eu.groeller.ds.domain.exercise.ExerciseType;
 import eu.groeller.ds.presentation.request.exercise.*;
-import eu.groeller.ds.presentation.request.user.UserRequest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,6 +17,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,38 +33,17 @@ class WorkoutControllerIntegrationTest {
         @Autowired
         private ObjectMapper objectMapper;
 
-        private String authToken;
-
-        @BeforeEach
-        void setUp() throws Exception {
-                String uniqueId = UUID.randomUUID().toString();
-                UserRequest createRequest = new UserRequest("testuser_" + uniqueId, "test_" + uniqueId + "@workout.com",
-                                "password123");
-                mockMvc.perform(post("/api/v1/users/register")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(createRequest)))
-                                .andExpect(status().isCreated());
-
-                mockMvc.perform(post("/api/v1/users/login")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(
-                                                new eu.groeller.ds.presentation.request.user.UserLoginRequest(
-                                                                createRequest.email(), "password123"))))
-                                .andExpect(status().isOk())
-                                .andDo(mvcResult -> {
-                                        String response = mvcResult.getResponse().getContentAsString();
-                                        authToken = objectMapper.readTree(response).get("token").asText();
-                                });
-        }
-
         @Test
         void fullWorkoutLifecycle_startAddEntriesComplete() throws Exception {
                 String uniqueId = UUID.randomUUID().toString().substring(0, 8);
                 OffsetDateTime now = OffsetDateTime.now();
+                String kcSubject = "kc-workout-" + uniqueId;
 
                 // 1. Create a workout type
                 mockMvc.perform(post("/api/v1/exercises/workout-types")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                                 new CreateWorkoutTypeRequest("Push Day " + uniqueId))))
@@ -73,7 +51,9 @@ class WorkoutControllerIntegrationTest {
 
                 // 2. Create exercise definitions
                 MvcResult benchResult = mockMvc.perform(post("/api/v1/exercises")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(new CreateExerciseDefinitionRequest(
                                                 "Bench Press " + uniqueId, ExerciseType.WEIGHT_REPS))))
@@ -83,7 +63,9 @@ class WorkoutControllerIntegrationTest {
 
                 // 3. Start a workout
                 MvcResult workoutResult = mockMvc.perform(post("/api/v1/workouts")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                                 new StartWorkoutRequest("Push Day " + uniqueId, now))))
@@ -97,7 +79,9 @@ class WorkoutControllerIntegrationTest {
                 // 4. Add exercise entries (3 sets of bench press)
                 for (int i = 0; i < 3; i++) {
                         mockMvc.perform(post("/api/v1/workouts/" + workoutId + "/entries")
-                                        .header("Authorization", "Bearer " + authToken)
+                                        .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                        .claim("preferred_username", "testuser_" + uniqueId)
+                                                        .claim("email", "test_" + uniqueId + "@workout.com")))
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .content(objectMapper.writeValueAsString(new CreateExerciseEntryRequest(
                                                         benchId, i + 1, now.plusMinutes(i * 5),
@@ -112,7 +96,9 @@ class WorkoutControllerIntegrationTest {
 
                 // 5. Complete the workout
                 mockMvc.perform(patch("/api/v1/workouts/" + workoutId + "/complete")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(new CompleteWorkoutRequest(now.plusHours(1)))))
                                 .andExpect(status().isOk())
@@ -122,7 +108,9 @@ class WorkoutControllerIntegrationTest {
 
                 // 6. Get the workout
                 mockMvc.perform(get("/api/v1/workouts/" + workoutId)
-                                .header("Authorization", "Bearer " + authToken))
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com"))))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.status").value("COMPLETED"))
                                 .andExpect(jsonPath("$.entries.length()").value(3));
@@ -132,10 +120,13 @@ class WorkoutControllerIntegrationTest {
         void cancelWorkout_shouldSucceed() throws Exception {
                 String uniqueId = UUID.randomUUID().toString().substring(0, 8);
                 OffsetDateTime now = OffsetDateTime.now();
+                String kcSubject = "kc-cancel-" + uniqueId;
 
                 // Create workout type
                 mockMvc.perform(post("/api/v1/exercises/workout-types")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                                 new CreateWorkoutTypeRequest("Cancel Test " + uniqueId))))
@@ -143,7 +134,9 @@ class WorkoutControllerIntegrationTest {
 
                 // Start workout
                 MvcResult workoutResult = mockMvc.perform(post("/api/v1/workouts")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                                 new StartWorkoutRequest("Cancel Test " + uniqueId, now))))
@@ -154,15 +147,21 @@ class WorkoutControllerIntegrationTest {
 
                 // Cancel it
                 mockMvc.perform(patch("/api/v1/workouts/" + workoutId + "/cancel")
-                                .header("Authorization", "Bearer " + authToken))
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com"))))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.status").value("CANCELLED"));
         }
 
         @Test
         void getWorkouts_shouldReturnPaginatedList() throws Exception {
+                String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+
                 mockMvc.perform(get("/api/v1/workouts")
-                                .header("Authorization", "Bearer " + authToken))
+                                .with(jwt().jwt(j -> j.subject("kc-list-" + uniqueId)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com"))))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.content").isArray());
         }
@@ -171,17 +170,22 @@ class WorkoutControllerIntegrationTest {
         void distanceExerciseEntry_shouldSucceed() throws Exception {
                 String uniqueId = UUID.randomUUID().toString().substring(0, 8);
                 OffsetDateTime now = OffsetDateTime.now();
+                String kcSubject = "kc-distance-" + uniqueId;
 
                 // Create workout type + exercise definition
                 mockMvc.perform(post("/api/v1/exercises/workout-types")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                                 new CreateWorkoutTypeRequest("Cardio " + uniqueId))))
                                 .andExpect(status().isCreated());
 
                 MvcResult runDefResult = mockMvc.perform(post("/api/v1/exercises")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(new CreateExerciseDefinitionRequest(
                                                 "Running " + uniqueId, ExerciseType.DISTANCE))))
@@ -191,7 +195,9 @@ class WorkoutControllerIntegrationTest {
 
                 // Start workout
                 MvcResult workoutResult = mockMvc.perform(post("/api/v1/workouts")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(
                                                 new StartWorkoutRequest("Cardio " + uniqueId, now))))
@@ -202,7 +208,9 @@ class WorkoutControllerIntegrationTest {
 
                 // Add distance entry
                 mockMvc.perform(post("/api/v1/workouts/" + workoutId + "/entries")
-                                .header("Authorization", "Bearer " + authToken)
+                                .with(jwt().jwt(j -> j.subject(kcSubject)
+                                                .claim("preferred_username", "testuser_" + uniqueId)
+                                                .claim("email", "test_" + uniqueId + "@workout.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(new CreateExerciseEntryRequest(
                                                 runId, 1, now, now.plusHours(1),

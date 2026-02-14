@@ -2,16 +2,11 @@ package eu.groeller.ds.service;
 
 import eu.groeller.ds.domain.User;
 import eu.groeller.ds.persistence.user.UserRepository;
-import eu.groeller.ds.presentation.request.user.UserLoginRequest;
-import eu.groeller.ds.presentation.request.user.UserRequest;
-import eu.groeller.ds.presentation.response.user.UserLoginResponse;
-import eu.groeller.ds.service.security.JwtService;
-import eu.groeller.ds.service.utils.DtoUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -20,52 +15,32 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
 
-    public User createUser(UserRequest dto) {
-        if (dto == null) {
-            log.warn("UserRequest Dto was null");
-            throw new NullPointerException("UserRequest Body must not be null");
-        }
-        DtoUtils.checkAllNullsAndBlanks(dto);
+    /**
+     * Resolves a local User entity from a Keycloak JWT token.
+     * If the user does not exist locally, a new User is auto-created from the token
+     * claims.
+     */
+    @Transactional
+    public User resolveUser(JwtAuthenticationToken authToken) {
+        String keycloakId = authToken.getToken().getSubject();
 
-        if (userRepository.existsByEmail(dto.email())) {
-            log.warn("Email [{}] is already used by a different account", dto.email());
-            throw new IllegalArgumentException("Email " + dto.email() + " is already used by a different account.");
-        }
-        if (userRepository.existsByUsername(dto.username())) {
-            log.warn("Username [{}] is already used by a different account", dto.username());
-            throw new IllegalArgumentException("Username " + dto.username() + " is already used by a different account.");
-        }
+        return userRepository.findByKeycloakId(keycloakId)
+                .orElseGet(() -> {
+                    String username = authToken.getToken().getClaimAsString("preferred_username");
+                    String email = authToken.getToken().getClaimAsString("email");
 
-        var user = userRepository.save(new User(dto.username(), dto.email(), dto.password(), passwordEncoder));
-        log.info("Created User [{}]", user.getUsername());
-        return user;
-    }
+                    if (username == null || username.isBlank()) {
+                        username = keycloakId;
+                    }
+                    if (email == null || email.isBlank()) {
+                        email = username + "@keycloak.local";
+                    }
 
-    public UserLoginResponse login(UserLoginRequest dto) {
-        if (dto == null) {
-            log.warn("UserLoginRequest Dto was null");
-            throw new NullPointerException("UserLoginRequest Body must not be null");
-        }
-        DtoUtils.checkAllNullsAndBlanks(dto);
-
-        // TODO CHANGE EXCEPTIONS
-        val user = userRepository.findByEmail(dto.email())
-                .orElseThrow(() -> {
-                    log.warn("No user with email [{}] found!", dto.email());
-                    return new IllegalArgumentException("No user with email [" + dto.email() + "] found!");
+                    var user = new User(username, email, keycloakId);
+                    user = userRepository.save(user);
+                    log.info("Auto-created local user [{}] from Keycloak subject [{}]", user.getUsername(), keycloakId);
+                    return user;
                 });
-
-        log.debug("Comparing passwords");
-        if (!user.comparePasswords(dto.password(), passwordEncoder)) {
-            log.warn("Invalid password provided for user [{}]", user.getUsername());
-            throw new IllegalArgumentException("Invalid password");
-        }
-
-        String token = jwtService.generateToken(user);
-        log.info("User Login accept, token generated, building Dto");
-        return new UserLoginResponse(user.getUsername(), user.getEmail(), token);
     }
 }

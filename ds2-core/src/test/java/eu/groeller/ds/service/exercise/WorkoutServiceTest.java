@@ -41,7 +41,7 @@ class WorkoutServiceTest {
     @BeforeEach
     void setUp() {
         workoutService = new WorkoutService(workoutRepository, workoutTypeRepository, exerciseDefinitionRepository);
-        testUser = new User("testuser", "test@example.com", "password");
+        testUser = new User("testuser", "test@example.com", "kc-test-123");
         now = OffsetDateTime.now();
     }
 
