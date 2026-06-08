@@ -15,7 +15,7 @@
     <description>Dataserver of the Datastream Application</description>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>26</java.version>
         <spring.profiles.active>dev</spring.profiles.active>
         <lombok.version>1.18.42</lombok.version>
     </properties>
