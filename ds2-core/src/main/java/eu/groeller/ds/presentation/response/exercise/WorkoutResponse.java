@@ -1,6 +1,6 @@
 package eu.groeller.ds.presentation.response.exercise;
 
-import eu.groeller.ds.domain.exercise.Workout;
+import eu.groeller.ds.domain.exercise.WorkoutData;
 import eu.groeller.ds.domain.exercise.WorkoutStatus;
 
 import java.time.OffsetDateTime;
@@ -14,7 +14,7 @@ public record WorkoutResponse(
         OffsetDateTime endTime,
         Long durationMs,
         List<ExerciseEntryResponse> entries) {
-    public static WorkoutResponse from(Workout workout) {
+    public static WorkoutResponse from(WorkoutData workout) {
         return new WorkoutResponse(
                 workout.getId(),
                 workout.getWorkoutType().getName(),

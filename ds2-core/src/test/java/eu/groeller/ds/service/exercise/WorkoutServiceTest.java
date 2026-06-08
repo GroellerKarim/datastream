@@ -1,14 +1,19 @@
 package eu.groeller.ds.service.exercise;
 
-import eu.groeller.ds.domain.User;
-import eu.groeller.ds.domain.exercise.*;
+import eu.groeller.ds.domain.exercise.WorkoutStatus;
+import eu.groeller.ds.persistence.entity.UserEntity;
+import eu.groeller.ds.persistence.entity.exercise.ExerciseDefinitionEntity;
+import eu.groeller.ds.persistence.entity.exercise.ExerciseEntryEntity;
+import eu.groeller.ds.persistence.entity.exercise.WorkoutEntity;
+import eu.groeller.ds.persistence.entity.exercise.WorkoutTypeEntity;
 import eu.groeller.ds.persistence.exercise.ExerciseDefinitionRepository;
 import eu.groeller.ds.persistence.exercise.WorkoutRepository;
 import eu.groeller.ds.persistence.exercise.WorkoutTypeRepository;
+import eu.groeller.ds.domain.exercise.ExerciseType;
 import eu.groeller.ds.presentation.request.exercise.CompleteWorkoutRequest;
 import eu.groeller.ds.presentation.request.exercise.CreateExerciseEntryRequest;
 import eu.groeller.ds.presentation.request.exercise.StartWorkoutRequest;
-import eu.groeller.ds.service.exceptions.DSNotFoundException;
+import eu.groeller.ds.service.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,13 +40,13 @@ class WorkoutServiceTest {
     private ExerciseDefinitionRepository exerciseDefinitionRepository;
 
     private WorkoutService workoutService;
-    private User testUser;
+    private UserEntity testUser;
     private OffsetDateTime now;
 
     @BeforeEach
     void setUp() {
         workoutService = new WorkoutService(workoutRepository, workoutTypeRepository, exerciseDefinitionRepository);
-        testUser = new User("testuser", "test@example.com", "kc-test-123");
+        testUser = new UserEntity("testuser", "test@example.com", "kc-test-123");
         now = OffsetDateTime.now();
     }
 
@@ -50,18 +55,18 @@ class WorkoutServiceTest {
 
         @Test
         void createsActiveWorkout() {
-            var workoutType = new WorkoutType("Push Day");
+            var workoutType = new WorkoutTypeEntity("Push Day");
             var request = new StartWorkoutRequest("Push Day", now);
 
             when(workoutTypeRepository.findByName("Push Day")).thenReturn(Optional.of(workoutType));
-            when(workoutRepository.save(any(Workout.class))).thenAnswer(i -> i.getArgument(0));
+            when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = workoutService.startWorkout(testUser, request);
 
             assertThat(result.getStatus()).isEqualTo(WorkoutStatus.ACTIVE);
             assertThat(result.getUser()).isEqualTo(testUser);
             assertThat(result.getStartTime()).isEqualTo(now);
-            verify(workoutRepository).save(any(Workout.class));
+            verify(workoutRepository).save(any(WorkoutEntity.class));
         }
 
         @Test
@@ -85,7 +90,7 @@ class WorkoutServiceTest {
             when(workoutTypeRepository.findByName("Nonexistent")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> workoutService.startWorkout(testUser, request))
-                    .isInstanceOf(DSNotFoundException.class)
+                    .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Nonexistent");
             verify(workoutRepository, never()).save(any());
         }
@@ -96,21 +101,20 @@ class WorkoutServiceTest {
 
         @Test
         void addsEntryToActiveWorkout() {
-            var workoutType = new WorkoutType("Push Day");
-            var workout = new Workout(testUser, workoutType, now);
-            var definition = new ExerciseDefinition("Bench Press", ExerciseType.WEIGHT_REPS);
+            var workoutEntity = buildActiveWorkoutEntity();
+            var defEntity = new ExerciseDefinitionEntity("Bench Press", ExerciseType.WEIGHT_REPS);
             var request = new CreateExerciseEntryRequest(1L, 1, now, now.plusMinutes(5),
                     80.0, 10, false, null, null, null, null);
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workout));
-            when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(definition));
-            when(workoutRepository.save(any(Workout.class))).thenAnswer(i -> i.getArgument(0));
+            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
+            when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(defEntity));
+            when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = workoutService.addExerciseEntry(testUser, 1L, request);
 
             assertThat(result.getReps()).isEqualTo(10);
             assertThat(result.getWeightKg()).isEqualTo(80.0);
-            assertThat(workout.getEntries()).hasSize(1);
+            assertThat(workoutEntity.getEntries()).hasSize(1);
         }
 
         @Test
@@ -120,21 +124,20 @@ class WorkoutServiceTest {
             when(workoutRepository.findByIdAndUser(99L, testUser)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> workoutService.addExerciseEntry(testUser, 99L, request))
-                    .isInstanceOf(DSNotFoundException.class);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
 
         @Test
         void whenExerciseDefinitionNotFound_throwsNotFoundException() {
-            var workoutType = new WorkoutType("Push Day");
-            var workout = new Workout(testUser, workoutType, now);
+            var workoutEntity = buildActiveWorkoutEntity();
             var request = new CreateExerciseEntryRequest(99L, 1, now, now.plusMinutes(5),
                     80.0, 10, false, null, null, null, null);
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workout));
+            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
             when(exerciseDefinitionRepository.findById(99L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> workoutService.addExerciseEntry(testUser, 1L, request))
-                    .isInstanceOf(DSNotFoundException.class);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
@@ -143,16 +146,20 @@ class WorkoutServiceTest {
 
         @Test
         void completesActiveWorkout() {
-            var workoutType = new WorkoutType("Push Day");
-            var workout = new Workout(testUser, workoutType, now);
-            var definition = new ExerciseDefinition("Bench Press", ExerciseType.WEIGHT_REPS);
-            workout.addEntry(new ExerciseEntry(workout, definition, 1, now, now.plusMinutes(5),
-                    80.0, 10, false, null, null, null, null));
+            var workoutEntity = buildActiveWorkoutEntity();
+            var defEntity = new ExerciseDefinitionEntity("Bench Press", ExerciseType.WEIGHT_REPS);
+            var entryEntity = new ExerciseEntryEntity();
+            entryEntity.setExerciseDefinition(defEntity);
+            entryEntity.setOrderIndex(1);
+            entryEntity.setStartTime(now);
+            entryEntity.setEndTime(now.plusMinutes(5));
+            entryEntity.setReps(10);
+            workoutEntity.getEntries().add(entryEntity);
 
             var request = new CompleteWorkoutRequest(now.plusHours(1));
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workout));
-            when(workoutRepository.save(any(Workout.class))).thenAnswer(i -> i.getArgument(0));
+            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
+            when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = workoutService.completeWorkout(testUser, 1L, request);
 
@@ -166,7 +173,7 @@ class WorkoutServiceTest {
             when(workoutRepository.findByIdAndUser(99L, testUser)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> workoutService.completeWorkout(testUser, 99L, request))
-                    .isInstanceOf(DSNotFoundException.class);
+                    .isInstanceOf(ResourceNotFoundException.class);
         }
     }
 
@@ -175,15 +182,24 @@ class WorkoutServiceTest {
 
         @Test
         void cancelsActiveWorkout() {
-            var workoutType = new WorkoutType("Push Day");
-            var workout = new Workout(testUser, workoutType, now);
+            var workoutEntity = buildActiveWorkoutEntity();
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workout));
-            when(workoutRepository.save(any(Workout.class))).thenAnswer(i -> i.getArgument(0));
+            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
+            when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
             var result = workoutService.cancelWorkout(testUser, 1L);
 
             assertThat(result.getStatus()).isEqualTo(WorkoutStatus.CANCELLED);
         }
+    }
+
+    private WorkoutEntity buildActiveWorkoutEntity() {
+        var workoutTypeEntity = new WorkoutTypeEntity("Push Day");
+        var entity = new WorkoutEntity();
+        entity.setUser(testUser);
+        entity.setWorkoutType(workoutTypeEntity);
+        entity.setStatus(WorkoutStatus.ACTIVE);
+        entity.setStartTime(now);
+        return entity;
     }
 }

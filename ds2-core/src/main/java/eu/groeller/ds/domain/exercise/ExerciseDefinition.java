@@ -1,32 +1,20 @@
 package eu.groeller.ds.domain.exercise;
 
-import eu.groeller.ds.domain.AbstractEntity;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Setter;
 
 @Getter
-@Setter
-@NoArgsConstructor
+public class ExerciseDefinition implements ExerciseDefinitionData {
 
-@Entity
-@Table(name = "exercise_definition", uniqueConstraints = {
-        @UniqueConstraint(columnNames = { "name", "type" })
-})
-public class ExerciseDefinition extends AbstractEntity {
-
-    @NotNull
-    private String name;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    private ExerciseType type;
+    private final String name;
+    private final ExerciseType type;
 
     public ExerciseDefinition(@NonNull String name, @NonNull ExerciseType type) {
         this.name = name;
         this.type = type;
+    }
+
+    public static ExerciseDefinition loadFromExisting(@NonNull ExerciseDefinitionData data) {
+        return new ExerciseDefinition(data.getName(), data.getType());
     }
 }

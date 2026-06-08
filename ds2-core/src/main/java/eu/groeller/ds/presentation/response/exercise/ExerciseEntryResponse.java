@@ -1,7 +1,7 @@
 package eu.groeller.ds.presentation.response.exercise;
 
 import eu.groeller.ds.domain.exercise.DistanceUnit;
-import eu.groeller.ds.domain.exercise.ExerciseEntry;
+import eu.groeller.ds.domain.exercise.ExerciseEntryData;
 import eu.groeller.ds.domain.exercise.ExerciseType;
 
 import java.time.OffsetDateTime;
@@ -20,7 +20,7 @@ public record ExerciseEntryResponse(
         Double distance,
         DistanceUnit distanceUnit,
         Long durationSeconds) {
-    public static ExerciseEntryResponse from(ExerciseEntry entry) {
+    public static ExerciseEntryResponse from(ExerciseEntryData entry) {
         return new ExerciseEntryResponse(
                 entry.getId(),
                 entry.getExerciseDefinition().getName(),

@@ -1,8 +1,8 @@
 package eu.groeller.ds.persistence.exercise;
 
-import eu.groeller.ds.domain.User;
-import eu.groeller.ds.domain.exercise.Workout;
 import eu.groeller.ds.domain.exercise.WorkoutStatus;
+import eu.groeller.ds.persistence.entity.UserEntity;
+import eu.groeller.ds.persistence.entity.exercise.WorkoutEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface WorkoutRepository extends JpaRepository<Workout, Long> {
-    List<Workout> findByUserAndStatus(User user, WorkoutStatus status);
+public interface WorkoutRepository extends JpaRepository<WorkoutEntity, Long> {
+    List<WorkoutEntity> findByUserAndStatus(UserEntity user, WorkoutStatus status);
 
-    Page<Workout> findByUser(User user, Pageable pageable);
+    Page<WorkoutEntity> findByUser(UserEntity user, Pageable pageable);
 
-    Optional<Workout> findByIdAndUser(Long id, User user);
+    Optional<WorkoutEntity> findByIdAndUser(Long id, UserEntity user);
 }

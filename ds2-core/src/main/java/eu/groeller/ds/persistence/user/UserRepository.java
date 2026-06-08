@@ -1,6 +1,6 @@
 package eu.groeller.ds.persistence.user;
 
-import eu.groeller.ds.domain.User;
+import eu.groeller.ds.persistence.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Repository;
@@ -8,12 +8,12 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
-    Optional<User> findByUsername(String username);
+public interface UserRepository extends JpaRepository<UserEntity, Long> {
+    Optional<UserEntity> findByUsername(String username);
 
-    Optional<User> findByEmail(String email);
+    Optional<UserEntity> findByEmail(String email);
 
-    Optional<User> findByKeycloakId(String keycloakId);
+    Optional<UserEntity> findByKeycloakId(String keycloakId);
 
     boolean existsByUsername(String username);
 

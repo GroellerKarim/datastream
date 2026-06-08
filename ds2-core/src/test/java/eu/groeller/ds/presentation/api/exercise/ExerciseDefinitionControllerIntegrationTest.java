@@ -68,7 +68,7 @@ class ExerciseDefinitionControllerIntegrationTest {
                                                 .claim("email", "test_" + uniqueId + "@exdef.com")))
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isBadRequest());
+                                .andExpect(status().isConflict());
         }
 
         @Test

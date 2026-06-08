@@ -1,5 +1,6 @@
-package eu.groeller.ds.domain;
+package eu.groeller.ds.persistence.entity;
 
+import eu.groeller.ds.domain.AbstractEntityData;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,9 +10,8 @@ import java.time.OffsetDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-
 @MappedSuperclass
-public abstract class AbstractEntity {
+public abstract class AbstractJpaEntity implements AbstractEntityData {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

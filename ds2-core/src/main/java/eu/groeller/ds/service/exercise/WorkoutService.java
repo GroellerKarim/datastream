@@ -1,15 +1,17 @@
 package eu.groeller.ds.service.exercise;
 
-import eu.groeller.ds.domain.User;
-import eu.groeller.ds.domain.exercise.*;
+import eu.groeller.ds.domain.exercise.ExerciseEntry;
+import eu.groeller.ds.domain.exercise.Workout;
+import eu.groeller.ds.persistence.entity.UserEntity;
+import eu.groeller.ds.persistence.entity.exercise.ExerciseEntryEntity;
+import eu.groeller.ds.persistence.entity.exercise.WorkoutEntity;
 import eu.groeller.ds.persistence.exercise.ExerciseDefinitionRepository;
 import eu.groeller.ds.persistence.exercise.WorkoutRepository;
 import eu.groeller.ds.persistence.exercise.WorkoutTypeRepository;
 import eu.groeller.ds.presentation.request.exercise.CompleteWorkoutRequest;
 import eu.groeller.ds.presentation.request.exercise.CreateExerciseEntryRequest;
 import eu.groeller.ds.presentation.request.exercise.StartWorkoutRequest;
-import eu.groeller.ds.service.exceptions.DSIllegalArgumentException;
-import eu.groeller.ds.service.exceptions.DSNotFoundException;
+import eu.groeller.ds.service.exception.ResourceNotFoundException;
 import eu.groeller.ds.service.utils.DtoUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,38 +34,44 @@ public class WorkoutService {
     private final ExerciseDefinitionRepository exerciseDefinitionRepository;
 
     @Transactional
-    public Workout startWorkout(User user, StartWorkoutRequest request) {
+    public WorkoutEntity startWorkout(UserEntity user, StartWorkoutRequest request) {
         Objects.requireNonNull(user, "User must not be null");
         Objects.requireNonNull(request, "StartWorkoutRequest must not be null");
         DtoUtils.checkNulls(request, List.of("workoutTypeName", "startTime"));
         DtoUtils.checkBlanks(request, List.of("workoutTypeName"));
 
-        var workoutType = workoutTypeRepository.findByName(request.workoutTypeName())
-                .orElseThrow(() -> new DSNotFoundException(
-                        "Workout type '%s' not found".formatted(request.workoutTypeName())));
+        var workoutTypeEntity = workoutTypeRepository.findByName(request.workoutTypeName())
+                .orElseThrow(() -> ResourceNotFoundException.workoutType(request.workoutTypeName()));
 
-        var workout = new Workout(user, workoutType, request.startTime());
-        workout = workoutRepository.save(workout);
-        log.info("Started workout [{}] for user [{}]", workout.getId(), user.getUsername());
-        return workout;
+        // Domain object enforces business rule: new workout starts ACTIVE
+        var workout = new Workout(user, workoutTypeEntity, request.startTime());
+
+        var entity = new WorkoutEntity();
+        entity.setUser(user);
+        entity.setWorkoutType(workoutTypeEntity);
+        entity.setStatus(workout.getStatus());
+        entity.setStartTime(workout.getStartTime());
+
+        entity = workoutRepository.save(entity);
+        log.info("Started workout [{}] for user [{}]", entity.getId(), user.getUsername());
+        return entity;
     }
 
     @Transactional
-    public ExerciseEntry addExerciseEntry(User user, Long workoutId, CreateExerciseEntryRequest request) {
+    public ExerciseEntryEntity addExerciseEntry(UserEntity user, Long workoutId, CreateExerciseEntryRequest request) {
         Objects.requireNonNull(request, "CreateExerciseEntryRequest must not be null");
         DtoUtils.checkNulls(request, List.of("exerciseDefinitionId", "orderIndex", "startTime", "endTime"));
 
-        var workout = workoutRepository.findByIdAndUser(workoutId, user)
-                .orElseThrow(() -> new DSNotFoundException(
-                        "Workout with id %d not found for user".formatted(workoutId)));
+        var workoutEntity = workoutRepository.findByIdAndUser(workoutId, user)
+                .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
 
-        var exerciseDefinition = exerciseDefinitionRepository.findById(request.exerciseDefinitionId())
-                .orElseThrow(() -> new DSNotFoundException(
-                        "Exercise definition with id %d not found".formatted(request.exerciseDefinitionId())));
+        var defEntity = exerciseDefinitionRepository.findById(request.exerciseDefinitionId())
+                .orElseThrow(() -> ResourceNotFoundException.exerciseDefinition(request.exerciseDefinitionId()));
 
+        // Domain validation: creates entry (validates type-specific fields) and checks workout is ACTIVE
+        var workout = Workout.loadFromExisting(workoutEntity);
         var entry = new ExerciseEntry(
-                workout,
-                exerciseDefinition,
+                defEntity,
                 request.orderIndex(),
                 request.startTime(),
                 request.endTime(),
@@ -74,52 +82,72 @@ public class WorkoutService {
                 request.distance(),
                 request.distanceUnit(),
                 request.durationSeconds());
-
         workout.addEntry(entry);
-        workoutRepository.save(workout);
 
-        log.info("Added exercise entry [{}] to workout [{}]", exerciseDefinition.getName(), workoutId);
-        return entry;
+        var entryEntity = new ExerciseEntryEntity();
+        entryEntity.setWorkout(workoutEntity);
+        entryEntity.setExerciseDefinition(defEntity);
+        entryEntity.setOrderIndex(entry.getOrderIndex());
+        entryEntity.setStartTime(entry.getStartTime());
+        entryEntity.setEndTime(entry.getEndTime());
+        entryEntity.setWeightKg(entry.getWeightKg());
+        entryEntity.setReps(entry.getReps());
+        entryEntity.setFailure(entry.getFailure());
+        entryEntity.setPartialReps(entry.getPartialReps());
+        entryEntity.setDistance(entry.getDistance());
+        entryEntity.setDistanceUnit(entry.getDistanceUnit());
+        entryEntity.setDurationSeconds(entry.getDurationSeconds());
+
+        workoutEntity.getEntries().add(entryEntity);
+        workoutRepository.save(workoutEntity);
+
+        log.info("Added exercise entry [{}] to workout [{}]", defEntity.getName(), workoutId);
+        return entryEntity;
     }
 
     @Transactional
-    public Workout completeWorkout(User user, Long workoutId, CompleteWorkoutRequest request) {
+    public WorkoutEntity completeWorkout(UserEntity user, Long workoutId, CompleteWorkoutRequest request) {
         Objects.requireNonNull(request, "CompleteWorkoutRequest must not be null");
         DtoUtils.checkNulls(request, List.of("endTime"));
 
-        var workout = workoutRepository.findByIdAndUser(workoutId, user)
-                .orElseThrow(() -> new DSNotFoundException(
-                        "Workout with id %d not found for user".formatted(workoutId)));
+        var workoutEntity = workoutRepository.findByIdAndUser(workoutId, user)
+                .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
 
+        var workout = Workout.loadFromExisting(workoutEntity);
         workout.complete(request.endTime());
-        workout = workoutRepository.save(workout);
+
+        workoutEntity.setStatus(workout.getStatus());
+        workoutEntity.setEndTime(workout.getEndTime());
+        workoutEntity = workoutRepository.save(workoutEntity);
 
         log.info("Completed workout [{}] for user [{}]", workoutId, user.getUsername());
-        return workout;
+        return workoutEntity;
     }
 
     @Transactional
-    public Workout cancelWorkout(User user, Long workoutId) {
-        var workout = workoutRepository.findByIdAndUser(workoutId, user)
-                .orElseThrow(() -> new DSNotFoundException(
-                        "Workout with id %d not found for user".formatted(workoutId)));
+    public WorkoutEntity cancelWorkout(UserEntity user, Long workoutId) {
+        var workoutEntity = workoutRepository.findByIdAndUser(workoutId, user)
+                .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
 
+        var workout = Workout.loadFromExisting(workoutEntity);
         workout.cancel();
-        workout = workoutRepository.save(workout);
+
+        workoutEntity.setStatus(workout.getStatus());
+        workoutEntity.setEndTime(workout.getEndTime());
+        workoutEntity = workoutRepository.save(workoutEntity);
 
         log.info("Cancelled workout [{}] for user [{}]", workoutId, user.getUsername());
-        return workout;
+        return workoutEntity;
     }
 
     @Transactional(readOnly = true)
-    public Page<Workout> getWorkouts(User user, Pageable pageable) {
+    public Page<WorkoutEntity> getWorkouts(UserEntity user, Pageable pageable) {
         return workoutRepository.findByUser(user, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Workout getWorkout(User user, Long workoutId) {
+    public WorkoutEntity getWorkout(UserEntity user, Long workoutId) {
         return workoutRepository.findByIdAndUser(workoutId, user)
-                .orElseThrow(() -> new DSNotFoundException(
-                        "Workout with id %d not found for user".formatted(workoutId)));
+                .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
     }
 }

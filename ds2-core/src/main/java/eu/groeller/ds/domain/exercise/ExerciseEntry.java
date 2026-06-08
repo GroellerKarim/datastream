@@ -1,77 +1,28 @@
 package eu.groeller.ds.domain.exercise;
 
-import eu.groeller.ds.domain.AbstractEntity;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
+import eu.groeller.ds.domain.exception.InvalidExerciseEntryException;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Setter;
 
 import java.time.OffsetDateTime;
-import java.util.Objects;
 
 @Getter
-@Setter
-@NoArgsConstructor
+public class ExerciseEntry {
 
-@Entity
-@Table(name = "exercise_entry")
-public class ExerciseEntry extends AbstractEntity {
+    private final ExerciseDefinitionData exerciseDefinition;
+    private final Integer orderIndex;
+    private final OffsetDateTime startTime;
+    private final OffsetDateTime endTime;
+    private final Double weightKg;
+    private final Integer reps;
+    private final Boolean failure;
+    private final Integer partialReps;
+    private final Double distance;
+    private final DistanceUnit distanceUnit;
+    private final Long durationSeconds;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "workout_id")
-    private Workout workout;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "exercise_definition_id")
-    private ExerciseDefinition exerciseDefinition;
-
-    @NotNull
-    private Integer orderIndex;
-
-    @NotNull
-    private OffsetDateTime startTime;
-
-    @NotNull
-    private OffsetDateTime endTime;
-
-    // -- Universally available, nullable fields --
-
-    @Column(name = "weight_kg")
-    private Double weightKg;
-
-    private Integer reps;
-
-    private Boolean failure;
-
-    @Column(name = "partial_reps")
-    private Integer partialReps;
-
-    private Double distance;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "distance_unit")
-    private DistanceUnit distanceUnit;
-
-    @Column(name = "duration_seconds")
-    private Long durationSeconds;
-
-    /**
-     * Creates a new ExerciseEntry with type-specific validation.
-     * <p>
-     * Based on the exercise definition's type:
-     * - WEIGHT_REPS: reps is required, weightKg is optional (bodyweight exercises)
-     * - DISTANCE: distance and distanceUnit are required
-     * - TIMED: durationSeconds is required
-     * <p>
-     * partialReps is only kept when failure is true; otherwise it is set to null.
-     */
     public ExerciseEntry(
-            @NonNull Workout workout,
-            @NonNull ExerciseDefinition exerciseDefinition,
+            @NonNull ExerciseDefinitionData exerciseDefinition,
             @NonNull Integer orderIndex,
             @NonNull OffsetDateTime startTime,
             @NonNull OffsetDateTime endTime,
@@ -82,55 +33,65 @@ public class ExerciseEntry extends AbstractEntity {
             Double distance,
             DistanceUnit distanceUnit,
             Long durationSeconds) {
-        this.workout = workout;
         this.exerciseDefinition = exerciseDefinition;
         this.orderIndex = orderIndex;
         this.startTime = startTime;
         this.endTime = endTime;
         this.weightKg = weightKg;
 
-        // Validate type-specific required fields
         switch (exerciseDefinition.getType()) {
             case WEIGHT_REPS -> {
-                this.reps = Objects.requireNonNull(reps, "reps must not be null for WEIGHT_REPS exercises");
+                if (reps == null)
+                    throw InvalidExerciseEntryException.missingRequiredField("reps", "WEIGHT_REPS");
             }
             case DISTANCE -> {
-                this.distance = Objects.requireNonNull(distance, "distance must not be null for DISTANCE exercises");
-                this.distanceUnit = Objects.requireNonNull(distanceUnit,
-                        "distanceUnit must not be null for DISTANCE exercises");
+                if (distance == null)
+                    throw InvalidExerciseEntryException.missingRequiredField("distance", "DISTANCE");
+                if (distanceUnit == null)
+                    throw InvalidExerciseEntryException.missingRequiredField("distanceUnit", "DISTANCE");
             }
             case TIMED -> {
-                this.durationSeconds = Objects.requireNonNull(durationSeconds,
-                        "durationSeconds must not be null for TIMED exercises");
+                if (durationSeconds == null)
+                    throw InvalidExerciseEntryException.missingRequiredField("durationSeconds", "TIMED");
             }
         }
 
-        // Set remaining optional fields
         this.failure = failure;
+        this.partialReps = (Boolean.TRUE.equals(failure) && partialReps != null && partialReps > 0)
+                ? partialReps : null;
 
-        // partialReps only makes sense when failure is true
-        if (Boolean.TRUE.equals(failure) && partialReps != null && partialReps > 0) {
-            this.partialReps = partialReps;
-        } else {
-            this.partialReps = null;
-        }
-
-        // Store duration for distance exercises too (derivable from start/end but
-        // convenient)
-        if (exerciseDefinition.getType() == ExerciseType.DISTANCE && durationSeconds != null) {
-            this.durationSeconds = durationSeconds;
-        }
-
-        // For non-distance types, store distance fields if provided (e.g. future
-        // flexibility)
-        if (exerciseDefinition.getType() != ExerciseType.DISTANCE) {
+        // Store type-specific required fields plus any optional cross-type fields
+        if (exerciseDefinition.getType() == ExerciseType.DISTANCE) {
             this.distance = distance;
             this.distanceUnit = distanceUnit;
-        }
-
-        // For non-WEIGHT_REPS types, still store reps if provided
-        if (exerciseDefinition.getType() != ExerciseType.WEIGHT_REPS) {
+            this.durationSeconds = durationSeconds;
             this.reps = reps;
+        } else if (exerciseDefinition.getType() == ExerciseType.TIMED) {
+            this.durationSeconds = durationSeconds;
+            this.distance = distance;
+            this.distanceUnit = distanceUnit;
+            this.reps = reps;
+        } else {
+            // WEIGHT_REPS
+            this.reps = reps;
+            this.distance = distance;
+            this.distanceUnit = distanceUnit;
+            this.durationSeconds = null;
         }
+    }
+
+    public static ExerciseEntry loadFromExisting(@NonNull ExerciseEntryData data) {
+        return new ExerciseEntry(
+                data.getExerciseDefinition(),
+                data.getOrderIndex(),
+                data.getStartTime(),
+                data.getEndTime(),
+                data.getWeightKg(),
+                data.getReps(),
+                data.getFailure(),
+                data.getPartialReps(),
+                data.getDistance(),
+                data.getDistanceUnit(),
+                data.getDurationSeconds());
     }
 }

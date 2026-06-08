@@ -1,6 +1,5 @@
 package eu.groeller.ds.presentation.api;
 
-import eu.groeller.ds.domain.User;
 import eu.groeller.ds.presentation.response.user.UserTokenLoginResponse;
 import eu.groeller.ds.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,7 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<UserTokenLoginResponse> getCurrentUser(JwtAuthenticationToken authToken) {
-        User user = userService.resolveUser(authToken);
+        var user = userService.resolveUser(authToken);
         return ResponseEntity.ok(new UserTokenLoginResponse(user.getUsername(), user.getEmail()));
     }
 }

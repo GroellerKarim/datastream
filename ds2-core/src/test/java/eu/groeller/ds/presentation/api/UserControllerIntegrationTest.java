@@ -1,7 +1,7 @@
 package eu.groeller.ds.presentation.api;
 
 import eu.groeller.ds.config.TestContainersConfig;
-import eu.groeller.ds.domain.User;
+import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,6 @@ class UserControllerIntegrationTest {
 
         @Test
         void getMe_WithValidToken_ShouldReturnUser() throws Exception {
-                // Act & Assert – user will be auto-created from token claims
                 mockMvc.perform(get("/api/v1/users/me")
                                 .with(jwt().jwt(j -> j
                                                 .subject("kc-user-123")
@@ -41,11 +40,9 @@ class UserControllerIntegrationTest {
 
         @Test
         void getMe_WithExistingUser_ShouldReturnExistingUser() throws Exception {
-                // Arrange - pre-create user
-                var user = new User("existinguser", "existing@example.com", "kc-existing-456");
+                var user = new UserEntity("existinguser", "existing@example.com", "kc-existing-456");
                 userRepository.save(user);
 
-                // Act & Assert – should find existing user, not create a new one
                 mockMvc.perform(get("/api/v1/users/me")
                                 .with(jwt().jwt(j -> j
                                                 .subject("kc-existing-456")

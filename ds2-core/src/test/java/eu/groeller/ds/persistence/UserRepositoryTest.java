@@ -1,7 +1,7 @@
 package eu.groeller.ds.persistence;
 
 import eu.groeller.ds.config.TestContainersConfig;
-import eu.groeller.ds.domain.User;
+import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ public class UserRepositoryTest {
     @BeforeEach
     void setUp() {
         for (int i = 1; i <= 10; i++) {
-            User user = new User();
+            UserEntity user = new UserEntity();
             user.setUsername("user" + i);
             user.setEmail("user" + i + "@example.com");
             user.setPassword("password" + i);
@@ -40,21 +40,21 @@ public class UserRepositoryTest {
 
     @Test
     void findById_WhenIdDoesNotExist_ReturnsEmptyOptional() {
-        Optional<User> result = queryUserRepository.findById(999L);
+        Optional<UserEntity> result = queryUserRepository.findById(999L);
 
         assertTrue(result.isEmpty());
     }
 
     @Test
     void findById_WhenIdExists_ReturnsUser() {
-        User user1 = new User();
+        UserEntity user1 = new UserEntity();
         user1.setUsername("userZ");
         user1.setEmail("user@example.com");
         user1.setPassword("password");
         user1 = entityManager.persist(user1);
         entityManager.flush();
 
-        Optional<User> result = queryUserRepository.findById(user1.getId());
+        Optional<UserEntity> result = queryUserRepository.findById(user1.getId());
 
         assertTrue(result.isPresent());
         assertEquals(user1.getId(), result.get().getId());
@@ -64,7 +64,7 @@ public class UserRepositoryTest {
 
     @Test
     void findByUsername_WhenUsernameDoesNotExist_ReturnsEmptyOptional() {
-        Optional<User> result = queryUserRepository.findByUsername("nonexistent");
+        Optional<UserEntity> result = queryUserRepository.findByUsername("nonexistent");
 
         assertTrue(result.isEmpty());
     }
@@ -72,11 +72,12 @@ public class UserRepositoryTest {
     @Test
     void findByUsername_WhenUsernameExists_ReturnsUser() {
         String username = "user1";
-        User user = entityManager.getEntityManager().createQuery("SELECT u FROM User u WHERE u.username = :username", User.class)
+        UserEntity user = entityManager.getEntityManager()
+                .createQuery("SELECT u FROM UserEntity u WHERE u.username = :username", UserEntity.class)
                 .setParameter("username", username)
                 .getSingleResult();
 
-        Optional<User> result = queryUserRepository.findByUsername(username);
+        Optional<UserEntity> result = queryUserRepository.findByUsername(username);
 
         assertTrue(result.isPresent());
         assertEquals(user.getId(), result.get().getId());
@@ -86,7 +87,7 @@ public class UserRepositoryTest {
 
     @Test
     void findByEmail_WhenEmailDoesNotExist_ReturnsEmptyOptional() {
-        Optional<User> result = queryUserRepository.findByEmail("nonexistent@example.com");
+        Optional<UserEntity> result = queryUserRepository.findByEmail("nonexistent@example.com");
 
         assertTrue(result.isEmpty());
     }
@@ -94,11 +95,12 @@ public class UserRepositoryTest {
     @Test
     void findByEmail_WhenEmailExists_ReturnsUser() {
         String email = "user1@example.com";
-        User user = entityManager.getEntityManager().createQuery("SELECT u FROM User u WHERE u.email = :email", User.class)
+        UserEntity user = entityManager.getEntityManager()
+                .createQuery("SELECT u FROM UserEntity u WHERE u.email = :email", UserEntity.class)
                 .setParameter("email", email)
                 .getSingleResult();
 
-        Optional<User> result = queryUserRepository.findByEmail(email);
+        Optional<UserEntity> result = queryUserRepository.findByEmail(email);
 
         assertTrue(result.isPresent());
         assertEquals(user.getId(), result.get().getId());
@@ -137,5 +139,4 @@ public class UserRepositoryTest {
 
         assertTrue(exists);
     }
-
 }

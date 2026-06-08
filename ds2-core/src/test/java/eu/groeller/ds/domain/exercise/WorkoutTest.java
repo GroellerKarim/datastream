@@ -1,7 +1,7 @@
 package eu.groeller.ds.domain.exercise;
 
 import eu.groeller.ds.domain.User;
-import eu.groeller.ds.service.exceptions.DSIllegalArgumentException;
+import eu.groeller.ds.domain.exception.InvalidWorkoutOperationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,7 +19,7 @@ class WorkoutTest {
 
     @BeforeEach
     void setUp() {
-        testUser = new User("testuser", "test@example.com", "password");
+        testUser = new User("testuser", "test@example.com", "kc-test-123");
         testType = new WorkoutType("Push Day");
         now = OffsetDateTime.now();
     }
@@ -64,7 +64,7 @@ class WorkoutTest {
         @Test
         void addsEntryToActiveWorkout() {
             var workout = new Workout(testUser, testType, now);
-            var entry = createWeightRepsEntry(workout, 1);
+            var entry = createWeightRepsEntry(1);
 
             workout.addEntry(entry);
 
@@ -74,11 +74,11 @@ class WorkoutTest {
         @Test
         void whenWorkoutIsCompleted_throwsException() {
             var workout = new Workout(testUser, testType, now);
-            workout.addEntry(createWeightRepsEntry(workout, 1));
+            workout.addEntry(createWeightRepsEntry(1));
             workout.complete(now.plusHours(1));
 
-            assertThatThrownBy(() -> workout.addEntry(createWeightRepsEntry(workout, 2)))
-                    .isInstanceOf(DSIllegalArgumentException.class)
+            assertThatThrownBy(() -> workout.addEntry(createWeightRepsEntry(2)))
+                    .isInstanceOf(InvalidWorkoutOperationException.class)
                     .hasMessageContaining("COMPLETED");
         }
 
@@ -87,8 +87,8 @@ class WorkoutTest {
             var workout = new Workout(testUser, testType, now);
             workout.cancel();
 
-            assertThatThrownBy(() -> workout.addEntry(createWeightRepsEntry(workout, 1)))
-                    .isInstanceOf(DSIllegalArgumentException.class)
+            assertThatThrownBy(() -> workout.addEntry(createWeightRepsEntry(1)))
+                    .isInstanceOf(InvalidWorkoutOperationException.class)
                     .hasMessageContaining("CANCELLED");
         }
     }
@@ -99,7 +99,7 @@ class WorkoutTest {
         @Test
         void completesActiveWorkoutWithEntries() {
             var workout = new Workout(testUser, testType, now);
-            workout.addEntry(createWeightRepsEntry(workout, 1));
+            workout.addEntry(createWeightRepsEntry(1));
 
             workout.complete(now.plusHours(1));
 
@@ -112,25 +112,25 @@ class WorkoutTest {
             var workout = new Workout(testUser, testType, now);
 
             assertThatThrownBy(() -> workout.complete(now.plusHours(1)))
-                    .isInstanceOf(DSIllegalArgumentException.class)
+                    .isInstanceOf(InvalidWorkoutOperationException.class)
                     .hasMessageContaining("no exercise entries");
         }
 
         @Test
         void whenAlreadyCompleted_throwsException() {
             var workout = new Workout(testUser, testType, now);
-            workout.addEntry(createWeightRepsEntry(workout, 1));
+            workout.addEntry(createWeightRepsEntry(1));
             workout.complete(now.plusHours(1));
 
             assertThatThrownBy(() -> workout.complete(now.plusHours(2)))
-                    .isInstanceOf(DSIllegalArgumentException.class)
+                    .isInstanceOf(InvalidWorkoutOperationException.class)
                     .hasMessageContaining("COMPLETED");
         }
 
         @Test
         void calculatesDurationCorrectly() {
             var workout = new Workout(testUser, testType, now);
-            workout.addEntry(createWeightRepsEntry(workout, 1));
+            workout.addEntry(createWeightRepsEntry(1));
             workout.complete(now.plusMinutes(30));
 
             assertThat(workout.getDurationMs()).isEqualTo(30 * 60 * 1000L);
@@ -152,11 +152,11 @@ class WorkoutTest {
         @Test
         void whenAlreadyCompleted_throwsException() {
             var workout = new Workout(testUser, testType, now);
-            workout.addEntry(createWeightRepsEntry(workout, 1));
+            workout.addEntry(createWeightRepsEntry(1));
             workout.complete(now.plusHours(1));
 
             assertThatThrownBy(() -> workout.cancel())
-                    .isInstanceOf(DSIllegalArgumentException.class)
+                    .isInstanceOf(InvalidWorkoutOperationException.class)
                     .hasMessageContaining("COMPLETED");
         }
     }
@@ -173,16 +173,16 @@ class WorkoutTest {
         @Test
         void returnsDurationWhenCompleted() {
             var workout = new Workout(testUser, testType, now);
-            workout.addEntry(createWeightRepsEntry(workout, 1));
+            workout.addEntry(createWeightRepsEntry(1));
             workout.complete(now.plusMinutes(45));
 
             assertThat(workout.getDurationMs()).isEqualTo(45 * 60 * 1000L);
         }
     }
 
-    private ExerciseEntry createWeightRepsEntry(Workout workout, int order) {
+    private ExerciseEntry createWeightRepsEntry(int order) {
         var definition = new ExerciseDefinition("Bench Press", ExerciseType.WEIGHT_REPS);
-        return new ExerciseEntry(workout, definition, order, now, now.plusMinutes(5),
+        return new ExerciseEntry(definition, order, now, now.plusMinutes(5),
                 80.0, 10, false, null, null, null, null);
     }
 }
