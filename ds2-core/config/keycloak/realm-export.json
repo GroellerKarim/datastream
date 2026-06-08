@@ -1,0 +1,80 @@
+{
+    "realm": "datastream",
+    "enabled": true,
+    "sslRequired": "external",
+    "registrationAllowed": true,
+    "loginWithEmailAllowed": true,
+    "duplicateEmailsAllowed": false,
+    "resetPasswordAllowed": true,
+    "editUsernameAllowed": false,
+    "bruteForceProtected": true,
+    "roles": {
+        "realm": [
+            {
+                "name": "user",
+                "description": "Default user role",
+                "composite": false
+            },
+            {
+                "name": "admin",
+                "description": "Administrator role",
+                "composite": false
+            }
+        ]
+    },
+    "defaultRoles": [
+        "user"
+    ],
+    "clients": [
+        {
+            "clientId": "datastream-backend",
+            "name": "Datastream Backend",
+            "enabled": true,
+            "clientAuthenticatorType": "client-secret",
+            "secret": "datastream-backend-secret",
+            "bearerOnly": true,
+            "standardFlowEnabled": false,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": false,
+            "serviceAccountsEnabled": false,
+            "publicClient": false
+        },
+        {
+            "clientId": "datastream-frontend",
+            "name": "Datastream Frontend",
+            "enabled": true,
+            "publicClient": true,
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "redirectUris": [
+                "http://localhost:3000/*",
+                "http://localhost:5173/*"
+            ],
+            "webOrigins": [
+                "http://localhost:3000",
+                "http://localhost:5173"
+            ]
+        }
+    ],
+    "users": [
+        {
+            "username": "testuser",
+            "email": "test@datastream.local",
+            "enabled": true,
+            "emailVerified": true,
+            "firstName": "Test",
+            "lastName": "User",
+            "credentials": [
+                {
+                    "type": "password",
+                    "value": "testpassword",
+                    "temporary": false
+                }
+            ],
+            "realmRoles": [
+                "user"
+            ]
+        }
+    ]
+}
