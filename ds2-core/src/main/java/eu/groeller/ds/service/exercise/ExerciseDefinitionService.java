@@ -1,5 +1,7 @@
 package eu.groeller.ds.service.exercise;
 
+import eu.groeller.ds.domain.exercise.ExerciseDefinition;
+import eu.groeller.ds.domain.exercise.WorkoutType;
 import eu.groeller.ds.persistence.entity.exercise.ExerciseDefinitionEntity;
 import eu.groeller.ds.persistence.entity.exercise.WorkoutTypeEntity;
 import eu.groeller.ds.persistence.exercise.ExerciseDefinitionRepository;
@@ -33,8 +35,10 @@ public class ExerciseDefinitionService {
             throw DuplicateResourceException.exerciseDefinition(request.name(), request.type().name());
         }
 
-        var definition = exerciseDefinitionRepository.save(new ExerciseDefinitionEntity(request.name(), request.type()));
-        log.info("Created exercise definition [{}] of type [{}]", definition.getName(), definition.getType());
+        var definition = exerciseDefinitionRepository.save(
+                ExerciseDefinitionEntity.from(new ExerciseDefinition(request.name(), request.type())));
+        log.info("Created exercise definition [{}] ([{}]) of type [{}]",
+                definition.getName(), definition.getId(), definition.getType());
         return definition;
     }
 
@@ -51,8 +55,8 @@ public class ExerciseDefinitionService {
             throw DuplicateResourceException.workoutType(request.name());
         }
 
-        var workoutType = workoutTypeRepository.save(new WorkoutTypeEntity(request.name()));
-        log.info("Created workout type [{}]", workoutType.getName());
+        var workoutType = workoutTypeRepository.save(WorkoutTypeEntity.from(new WorkoutType(request.name())));
+        log.info("Created workout type [{}] ([{}])", workoutType.getName(), workoutType.getId());
         return workoutType;
     }
 

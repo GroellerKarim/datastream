@@ -1,6 +1,7 @@
 package eu.groeller.ds.persistence;
 
 import eu.groeller.ds.config.TestContainersConfig;
+import eu.groeller.ds.domain.User;
 import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -29,9 +31,7 @@ public class UserRepositoryTest {
     @BeforeEach
     void setUp() {
         for (int i = 1; i <= 10; i++) {
-            UserEntity user = new UserEntity();
-            user.setUsername("user" + i);
-            user.setEmail("user" + i + "@example.com");
+            UserEntity user = UserEntity.from(new User("user" + i, "user" + i + "@example.com", "kc-user-" + i));
             user.setPassword("password" + i);
             entityManager.persist(user);
         }
@@ -40,16 +40,14 @@ public class UserRepositoryTest {
 
     @Test
     void findById_WhenIdDoesNotExist_ReturnsEmptyOptional() {
-        Optional<UserEntity> result = queryUserRepository.findById(999L);
+        Optional<UserEntity> result = queryUserRepository.findById(UUID.randomUUID());
 
         assertTrue(result.isEmpty());
     }
 
     @Test
     void findById_WhenIdExists_ReturnsUser() {
-        UserEntity user1 = new UserEntity();
-        user1.setUsername("userZ");
-        user1.setEmail("user@example.com");
+        UserEntity user1 = UserEntity.from(new User("userZ", "user@example.com", "kc-user-z"));
         user1.setPassword("password");
         user1 = entityManager.persist(user1);
         entityManager.flush();
@@ -138,5 +136,42 @@ public class UserRepositoryTest {
         boolean exists = queryUserRepository.existsByEmail(email);
 
         assertTrue(exists);
+    }
+
+    /**
+     * The id is assigned by the domain before anything is written, so it no longer signals whether
+     * a row exists. Saving must still insert, and the row must come back under exactly the id the
+     * domain chose rather than one the database picked.
+     */
+    @Test
+    void save_WhenIdWasAssignedByTheDomain_InsertsTheRow() {
+        User domainUser = new User("assigned", "assigned@example.com", "kc-assigned");
+
+        UserEntity saved = queryUserRepository.save(UserEntity.from(domainUser));
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(domainUser.getId(), saved.getId());
+        assertTrue(queryUserRepository.findById(domainUser.getId()).isPresent());
+    }
+
+    /** The other half of the same distinction: a row that has been read back must update, not re-insert. */
+    @Test
+    void save_WhenEntityWasLoaded_UpdatesInsteadOfInserting() {
+        User domainUser = new User("loaded", "loaded@example.com", "kc-loaded");
+        queryUserRepository.save(UserEntity.from(domainUser));
+        entityManager.flush();
+        entityManager.clear();
+
+        UserEntity loaded = queryUserRepository.findById(domainUser.getId()).orElseThrow();
+        loaded.setEmail("changed@example.com");
+        queryUserRepository.save(loaded);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertEquals(1, queryUserRepository.findAll().stream()
+                .filter(u -> u.getId().equals(domainUser.getId())).count());
+        assertEquals("changed@example.com",
+                queryUserRepository.findById(domainUser.getId()).orElseThrow().getEmail());
     }
 }

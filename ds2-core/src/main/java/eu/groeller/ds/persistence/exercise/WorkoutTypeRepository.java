@@ -5,9 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface WorkoutTypeRepository extends JpaRepository<WorkoutTypeEntity, Long> {
+public interface WorkoutTypeRepository extends JpaRepository<WorkoutTypeEntity, UUID> {
     Optional<WorkoutTypeEntity> findByName(String name);
 
     boolean existsByName(String name);

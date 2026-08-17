@@ -5,10 +5,11 @@ import eu.groeller.ds.domain.exercise.ExerciseType;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 public record ExerciseEntryResponse(
-        Long id,
+        UUID id,
         String exerciseName,
         ExerciseType exerciseType,
         Integer orderIndex,

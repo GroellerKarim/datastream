@@ -5,9 +5,10 @@ import eu.groeller.ds.domain.exercise.WorkoutStatus;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public record WorkoutResponse(
-        Long id,
+        UUID id,
         String workoutType,
         WorkoutStatus status,
         OffsetDateTime startTime,

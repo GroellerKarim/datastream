@@ -1,12 +1,14 @@
 package eu.groeller.ds.persistence.entity.exercise;
 
 import eu.groeller.ds.domain.exercise.DistanceUnit;
+import eu.groeller.ds.domain.exercise.ExerciseSet;
 import eu.groeller.ds.domain.exercise.ExerciseSetData;
 import eu.groeller.ds.persistence.entity.AbstractJpaEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * Stored flat: one row per set, with the type-specific columns nullable. The typed view is
@@ -14,7 +16,7 @@ import java.time.OffsetDateTime;
  */
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // Hibernate only; every other path must supply the domain-assigned id
 @Entity
 @Table(name = "exercise_set")
 public class ExerciseSetEntity extends AbstractJpaEntity implements ExerciseSetData {
@@ -50,4 +52,28 @@ public class ExerciseSetEntity extends AbstractJpaEntity implements ExerciseSetD
 
     @Column(name = "duration_seconds")
     private Long durationSeconds;
+
+    private ExerciseSetEntity(@NonNull UUID id) {
+        super(id);
+    }
+
+    /**
+     * Flattening needs no type dispatch: {@code SetMetrics} returns null from the accessors that do
+     * not apply to a given variant.
+     */
+    public static ExerciseSetEntity from(@NonNull ExerciseSet set) {
+        var metrics = set.getMetrics();
+        var entity = new ExerciseSetEntity(set.getId());
+        entity.orderIndex = set.getOrderIndex();
+        entity.startTime = set.getStartTime();
+        entity.endTime = set.getEndTime();
+        entity.weightKg = metrics.weightKg();
+        entity.reps = metrics.reps();
+        entity.failure = metrics.failure();
+        entity.partialReps = metrics.partialReps();
+        entity.distance = metrics.distance();
+        entity.distanceUnit = metrics.distanceUnit();
+        entity.durationSeconds = metrics.durationSeconds();
+        return entity;
+    }
 }

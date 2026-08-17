@@ -4,13 +4,14 @@ import eu.groeller.ds.domain.exercise.DistanceUnit;
 import eu.groeller.ds.domain.exercise.ExerciseSetData;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * @param restBeforeMs gap since the previous set ended; null for the first set of an entry.
  *                     Derived from the set timestamps, never stored.
  */
 public record ExerciseSetResponse(
-        Long id,
+        UUID id,
         Integer orderIndex,
         OffsetDateTime startTime,
         OffsetDateTime endTime,

@@ -1,5 +1,7 @@
 package eu.groeller.ds.domain.exercise;
 
-public interface WorkoutTypeData {
+import eu.groeller.ds.domain.Identifiable;
+
+public interface WorkoutTypeData extends Identifiable {
     String getName();
 }

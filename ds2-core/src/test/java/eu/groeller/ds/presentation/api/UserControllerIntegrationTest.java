@@ -1,6 +1,7 @@
 package eu.groeller.ds.presentation.api;
 
 import eu.groeller.ds.config.TestContainersConfig;
+import eu.groeller.ds.domain.User;
 import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.user.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ class UserControllerIntegrationTest {
 
         @Test
         void getMe_WithExistingUser_ShouldReturnExistingUser() throws Exception {
-                var user = new UserEntity("existinguser", "existing@example.com", "kc-existing-456");
+                var user = UserEntity.from(new User("existinguser", "existing@example.com", "kc-existing-456"));
                 userRepository.save(user);
 
                 mockMvc.perform(get("/api/v1/users/me")

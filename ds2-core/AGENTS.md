@@ -41,6 +41,18 @@ which properly constructs a DomainObject with the data provided.
 
 All other constructors in a domain object must be tied to business cases (and likely not provide an AllArgsConstructor but only what is needed).
 
+### Identity
+
+The domain owns its identifiers. A domain object generates a `UUID` for itself in its constructor,
+so it has an identity from the moment it exists rather than after a database round trip. The
+`loadFromExisting` path carries the stored id through instead of minting a new one.
+
+Every domain "Data" interface therefore extends `domain.Identifiable`, and the JPA entities take
+the id as a constructor argument — usually via a static `XEntity.from(XData data)` factory. Their
+no-arg constructors are protected: Hibernate needs one, nothing else may build an entity without an
+id. `AbstractJpaEntity` implements `Persistable<UUID>` and tracks newness in a transient flag,
+because an assigned id can no longer tell Spring Data whether a row already exists.
+
 ### Exception Handling
 There is a Top-Level eu.groeller.ds.DatastreamException(String message, String userMessage)
 

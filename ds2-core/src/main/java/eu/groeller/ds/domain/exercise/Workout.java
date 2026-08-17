@@ -1,5 +1,6 @@
 package eu.groeller.ds.domain.exercise;
 
+import eu.groeller.ds.domain.Identifiable;
 import eu.groeller.ds.domain.RecordedTime;
 import eu.groeller.ds.domain.UserData;
 import eu.groeller.ds.domain.exception.InvalidWorkoutOperationException;
@@ -12,10 +13,12 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Getter
-public class Workout {
+public class Workout implements Identifiable {
 
+    private final UUID id;
     private final UserData user;
     private final WorkoutTypeData workoutType;
     private WorkoutStatus status;
@@ -24,6 +27,11 @@ public class Workout {
     private final List<ExerciseEntry> entries;
 
     public Workout(@NonNull UserData user, @NonNull WorkoutTypeData workoutType, @NonNull OffsetDateTime startTime) {
+        this(UUID.randomUUID(), user, workoutType, startTime);
+    }
+
+    private Workout(@NonNull UUID id, UserData user, WorkoutTypeData workoutType, OffsetDateTime startTime) {
+        this.id = id;
         this.user = user;
         this.workoutType = workoutType;
         this.startTime = RecordedTime.normalise(startTime);
@@ -36,7 +44,7 @@ public class Workout {
      * completing, so historical rows stay readable when those rules change.
      */
     public static Workout loadFromExisting(@NonNull WorkoutData data) {
-        var workout = new Workout(data.getUser(), data.getWorkoutType(), data.getStartTime());
+        var workout = new Workout(data.getId(), data.getUser(), data.getWorkoutType(), data.getStartTime());
         workout.status = data.getStatus();
         workout.endTime = RecordedTime.normalise(data.getEndTime());
         data.getEntries().forEach(e -> workout.entries.add(ExerciseEntry.loadFromExisting(e)));

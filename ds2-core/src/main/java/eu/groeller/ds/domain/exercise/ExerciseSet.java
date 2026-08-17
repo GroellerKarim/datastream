@@ -1,5 +1,6 @@
 package eu.groeller.ds.domain.exercise;
 
+import eu.groeller.ds.domain.Identifiable;
 import eu.groeller.ds.domain.RecordedTime;
 import eu.groeller.ds.domain.TimeSpan;
 import eu.groeller.ds.domain.exception.InvalidExerciseEntryException;
@@ -7,6 +8,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * One set of one exercise: when it happened, and what was measured.
@@ -15,8 +17,9 @@ import java.time.OffsetDateTime;
  * {@link SetTimings#restPeriodsMs}.
  */
 @Getter
-public class ExerciseSet implements TimeSpan {
+public class ExerciseSet implements TimeSpan, Identifiable {
 
+    private final UUID id;
     private final Integer orderIndex;
     private final OffsetDateTime startTime;
     private final OffsetDateTime endTime;
@@ -26,10 +29,19 @@ public class ExerciseSet implements TimeSpan {
                        @NonNull OffsetDateTime startTime,
                        @NonNull OffsetDateTime endTime,
                        @NonNull SetMetrics metrics) {
+        this(UUID.randomUUID(), orderIndex, startTime, endTime, metrics);
+    }
+
+    private ExerciseSet(@NonNull UUID id,
+                        @NonNull Integer orderIndex,
+                        @NonNull OffsetDateTime startTime,
+                        @NonNull OffsetDateTime endTime,
+                        @NonNull SetMetrics metrics) {
         if (endTime.isBefore(startTime)) {
             throw InvalidExerciseEntryException.endBeforeStart(orderIndex);
         }
 
+        this.id = id;
         this.orderIndex = orderIndex;
         this.startTime = RecordedTime.normalise(startTime);
         this.endTime = RecordedTime.normalise(endTime);
@@ -38,6 +50,7 @@ public class ExerciseSet implements TimeSpan {
 
     public static ExerciseSet loadFromExisting(@NonNull ExerciseSetData data, @NonNull ExerciseType type) {
         return new ExerciseSet(
+                data.getId(),
                 data.getOrderIndex(),
                 data.getStartTime(),
                 data.getEndTime(),

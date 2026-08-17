@@ -1,5 +1,6 @@
 package eu.groeller.ds.service;
 
+import eu.groeller.ds.domain.User;
 import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,7 @@ public class UserServiceTest {
 
     @Test
     void resolveUser_WhenUserExists_ShouldReturnExistingUser() {
-        var existingUser = new UserEntity("testuser", "test@example.com", "kc-123");
+        var existingUser = UserEntity.from(new User("testuser", "test@example.com", "kc-123"));
         when(mockUserRepository.findByKeycloakId("kc-123")).thenReturn(Optional.of(existingUser));
 
         var authToken = createMockAuthToken("kc-123", "testuser", "test@example.com");

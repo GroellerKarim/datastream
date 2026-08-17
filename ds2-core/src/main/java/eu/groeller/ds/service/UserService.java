@@ -1,5 +1,6 @@
 package eu.groeller.ds.service;
 
+import eu.groeller.ds.domain.User;
 import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -32,10 +33,11 @@ public class UserService {
                         email = username + "@keycloak.local";
                     }
 
-                    var user = new UserEntity(username, email, keycloakId);
-                    user = userRepository.save(user);
-                    log.info("Auto-created local user [{}] from Keycloak subject [{}]", user.getUsername(), keycloakId);
-                    return user;
+                    var user = new User(username, email, keycloakId);
+                    var entity = userRepository.save(UserEntity.from(user));
+                    log.info("Auto-created local user [{}] with id [{}] from Keycloak subject [{}]",
+                            entity.getUsername(), entity.getId(), keycloakId);
+                    return entity;
                 });
     }
 }

@@ -1,6 +1,8 @@
 package eu.groeller.ds.service.exercise;
 
+import eu.groeller.ds.domain.exercise.ExerciseDefinition;
 import eu.groeller.ds.domain.exercise.ExerciseType;
+import eu.groeller.ds.domain.exercise.WorkoutType;
 import eu.groeller.ds.persistence.entity.exercise.ExerciseDefinitionEntity;
 import eu.groeller.ds.persistence.entity.exercise.WorkoutTypeEntity;
 import eu.groeller.ds.persistence.exercise.ExerciseDefinitionRepository;
@@ -41,7 +43,7 @@ class ExerciseDefinitionServiceTest {
         @Test
         void createsSuccessfully() {
             var request = new CreateExerciseDefinitionRequest("Bench Press", ExerciseType.WEIGHT_REPS);
-            var expected = new ExerciseDefinitionEntity("Bench Press", ExerciseType.WEIGHT_REPS);
+            var expected = ExerciseDefinitionEntity.from(new ExerciseDefinition("Bench Press", ExerciseType.WEIGHT_REPS));
 
             when(exerciseDefinitionRepository.existsByNameAndType("Bench Press", ExerciseType.WEIGHT_REPS))
                     .thenReturn(false);
@@ -95,7 +97,7 @@ class ExerciseDefinitionServiceTest {
         @Test
         void createsSuccessfully() {
             var request = new CreateWorkoutTypeRequest("Push Day");
-            var expected = new WorkoutTypeEntity("Push Day");
+            var expected = WorkoutTypeEntity.from(new WorkoutType("Push Day"));
 
             when(workoutTypeRepository.existsByName("Push Day")).thenReturn(false);
             when(workoutTypeRepository.save(any(WorkoutTypeEntity.class))).thenReturn(expected);

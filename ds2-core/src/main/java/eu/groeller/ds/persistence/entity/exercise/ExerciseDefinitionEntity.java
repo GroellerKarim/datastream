@@ -6,9 +6,11 @@ import eu.groeller.ds.persistence.entity.AbstractJpaEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Getter
 @Setter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // Hibernate only; every other path must supply the domain-assigned id
 @Entity
 @Table(name = "exercise_definition", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"name", "type"})
@@ -22,8 +24,13 @@ public class ExerciseDefinitionEntity extends AbstractJpaEntity implements Exerc
     @Column(nullable = false)
     private ExerciseType type;
 
-    public ExerciseDefinitionEntity(@NonNull String name, @NonNull ExerciseType type) {
+    public ExerciseDefinitionEntity(@NonNull UUID id, @NonNull String name, @NonNull ExerciseType type) {
+        super(id);
         this.name = name;
         this.type = type;
+    }
+
+    public static ExerciseDefinitionEntity from(@NonNull ExerciseDefinitionData definition) {
+        return new ExerciseDefinitionEntity(definition.getId(), definition.getName(), definition.getType());
     }
 }

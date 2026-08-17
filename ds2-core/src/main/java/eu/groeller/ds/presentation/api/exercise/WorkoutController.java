@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RequiredArgsConstructor
 
 @Slf4j
@@ -40,7 +42,7 @@ public class WorkoutController {
     @PostMapping("/{id}/entries")
     public ResponseEntity<ExerciseEntryResponse> addExerciseEntry(
             JwtAuthenticationToken authToken,
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody CreateExerciseEntryRequest request) {
         var user = userService.resolveUser(authToken);
         var entry = workoutService.addExerciseEntry(user, id, request);
@@ -50,7 +52,7 @@ public class WorkoutController {
     @PatchMapping("/{id}/complete")
     public ResponseEntity<WorkoutResponse> completeWorkout(
             JwtAuthenticationToken authToken,
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody CompleteWorkoutRequest request) {
         var user = userService.resolveUser(authToken);
         var workout = workoutService.completeWorkout(user, id, request);
@@ -60,7 +62,7 @@ public class WorkoutController {
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<WorkoutResponse> cancelWorkout(
             JwtAuthenticationToken authToken,
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         var user = userService.resolveUser(authToken);
         var workout = workoutService.cancelWorkout(user, id);
         return ResponseEntity.ok(WorkoutResponse.from(workout));
@@ -78,7 +80,7 @@ public class WorkoutController {
     @GetMapping("/{id}")
     public ResponseEntity<WorkoutResponse> getWorkout(
             JwtAuthenticationToken authToken,
-            @PathVariable Long id) {
+            @PathVariable UUID id) {
         var user = userService.resolveUser(authToken);
         var workout = workoutService.getWorkout(user, id);
         return ResponseEntity.ok(WorkoutResponse.from(workout));

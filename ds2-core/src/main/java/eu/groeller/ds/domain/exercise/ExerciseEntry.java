@@ -1,5 +1,6 @@
 package eu.groeller.ds.domain.exercise;
 
+import eu.groeller.ds.domain.Identifiable;
 import eu.groeller.ds.domain.exception.InvalidExerciseEntryException;
 import lombok.Getter;
 import lombok.NonNull;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * One exercise performed within a workout, together with its sets.
@@ -18,8 +20,9 @@ import java.util.List;
  * order, which is what lets the timing derivations read the first and last element directly.
  */
 @Getter
-public class ExerciseEntry {
+public class ExerciseEntry implements Identifiable {
 
+    private final UUID id;
     private final ExerciseDefinitionData exerciseDefinition;
     private final Integer orderIndex;
     private final List<ExerciseSet> sets;
@@ -27,13 +30,15 @@ public class ExerciseEntry {
     public ExerciseEntry(@NonNull ExerciseDefinitionData exerciseDefinition,
                          @NonNull Integer orderIndex,
                          @NonNull List<ExerciseSet> sets) {
-        this(exerciseDefinition, orderIndex, sets, true);
+        this(UUID.randomUUID(), exerciseDefinition, orderIndex, sets, true);
     }
 
-    private ExerciseEntry(ExerciseDefinitionData exerciseDefinition,
+    private ExerciseEntry(UUID id,
+                          ExerciseDefinitionData exerciseDefinition,
                           Integer orderIndex,
                           List<ExerciseSet> sets,
                           boolean enforceInvariants) {
+        this.id = id;
         this.exerciseDefinition = exerciseDefinition;
         this.orderIndex = orderIndex;
 
@@ -57,6 +62,7 @@ public class ExerciseEntry {
                 .toList();
 
         return new ExerciseEntry(
+                data.getId(),
                 ExerciseDefinition.loadFromExisting(data.getExerciseDefinition()),
                 data.getOrderIndex(),
                 sets,

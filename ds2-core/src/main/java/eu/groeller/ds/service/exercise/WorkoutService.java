@@ -7,7 +7,6 @@ import eu.groeller.ds.domain.exercise.SetMetrics;
 import eu.groeller.ds.domain.exercise.Workout;
 import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.entity.exercise.ExerciseEntryEntity;
-import eu.groeller.ds.persistence.entity.exercise.ExerciseSetEntity;
 import eu.groeller.ds.persistence.entity.exercise.WorkoutEntity;
 import eu.groeller.ds.persistence.exercise.ExerciseDefinitionRepository;
 import eu.groeller.ds.persistence.exercise.WorkoutRepository;
@@ -29,6 +28,7 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -51,22 +51,16 @@ public class WorkoutService {
         var workoutTypeEntity = workoutTypeRepository.findByName(request.workoutTypeName())
                 .orElseThrow(() -> ResourceNotFoundException.workoutType(request.workoutTypeName()));
 
-        // Domain object enforces business rule: new workout starts ACTIVE
+        // Domain object enforces business rule: new workout starts ACTIVE. It also mints the id.
         var workout = new Workout(user, workoutTypeEntity, request.startTime());
 
-        var entity = new WorkoutEntity();
-        entity.setUser(user);
-        entity.setWorkoutType(workoutTypeEntity);
-        entity.setStatus(workout.getStatus());
-        entity.setStartTime(workout.getStartTime());
-
-        entity = workoutRepository.save(entity);
+        var entity = workoutRepository.save(WorkoutEntity.from(workout, user, workoutTypeEntity));
         log.info("Started workout [{}] for user [{}]", entity.getId(), user.getUsername());
         return entity;
     }
 
     @Transactional
-    public ExerciseEntryEntity addExerciseEntry(UserEntity user, Long workoutId, CreateExerciseEntryRequest request) {
+    public ExerciseEntryEntity addExerciseEntry(UserEntity user, UUID workoutId, CreateExerciseEntryRequest request) {
         Objects.requireNonNull(request, "CreateExerciseEntryRequest must not be null");
         DtoUtils.checkNulls(request, List.of("exerciseDefinitionId", "orderIndex", "sets"));
 
@@ -81,21 +75,17 @@ public class WorkoutService {
         var entry = new ExerciseEntry(defEntity, request.orderIndex(), toDomainSets(request.sets(), defEntity.getType()));
         workout.addEntry(entry);
 
-        var entryEntity = new ExerciseEntryEntity();
-        entryEntity.setExerciseDefinition(defEntity);
-        entryEntity.setOrderIndex(entry.getOrderIndex());
-        entry.getSets().forEach(set -> entryEntity.addSet(toSetEntity(set)));
-
+        var entryEntity = ExerciseEntryEntity.from(entry, defEntity);
         workoutEntity.addEntry(entryEntity);
         workoutRepository.save(workoutEntity);
 
-        log.info("Added exercise entry [{}] with [{}] sets to workout [{}]",
-                defEntity.getName(), entry.getSets().size(), workoutId);
+        log.info("Added exercise entry [{}] ([{}]) with [{}] sets to workout [{}]",
+                defEntity.getName(), entry.getId(), entry.getSets().size(), workoutId);
         return entryEntity;
     }
 
     @Transactional
-    public WorkoutEntity completeWorkout(UserEntity user, Long workoutId, CompleteWorkoutRequest request) {
+    public WorkoutEntity completeWorkout(UserEntity user, UUID workoutId, CompleteWorkoutRequest request) {
         Objects.requireNonNull(request, "CompleteWorkoutRequest must not be null");
         DtoUtils.checkNulls(request, List.of("endTime"));
 
@@ -114,7 +104,7 @@ public class WorkoutService {
     }
 
     @Transactional
-    public WorkoutEntity cancelWorkout(UserEntity user, Long workoutId) {
+    public WorkoutEntity cancelWorkout(UserEntity user, UUID workoutId) {
         var workoutEntity = workoutRepository.findByIdAndUser(workoutId, user)
                 .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
 
@@ -135,7 +125,7 @@ public class WorkoutService {
     }
 
     @Transactional(readOnly = true)
-    public WorkoutEntity getWorkout(UserEntity user, Long workoutId) {
+    public WorkoutEntity getWorkout(UserEntity user, UUID workoutId) {
         return workoutRepository.findByIdAndUser(workoutId, user)
                 .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
     }
@@ -148,25 +138,5 @@ public class WorkoutService {
                     set.distance(), set.distanceUnit(), set.durationSeconds());
             return new ExerciseSet(set.orderIndex(), set.startTime(), set.endTime(), metrics);
         }).toList();
-    }
-
-    /**
-     * Flattening needs no type dispatch: {@link SetMetrics} returns null from the accessors that do
-     * not apply to a given variant.
-     */
-    private static ExerciseSetEntity toSetEntity(ExerciseSet set) {
-        var metrics = set.getMetrics();
-        var entity = new ExerciseSetEntity();
-        entity.setOrderIndex(set.getOrderIndex());
-        entity.setStartTime(set.getStartTime());
-        entity.setEndTime(set.getEndTime());
-        entity.setWeightKg(metrics.weightKg());
-        entity.setReps(metrics.reps());
-        entity.setFailure(metrics.failure());
-        entity.setPartialReps(metrics.partialReps());
-        entity.setDistance(metrics.distance());
-        entity.setDistanceUnit(metrics.distanceUnit());
-        entity.setDurationSeconds(metrics.durationSeconds());
-        return entity;
     }
 }

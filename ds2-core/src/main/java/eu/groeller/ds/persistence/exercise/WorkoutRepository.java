@@ -10,12 +10,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface WorkoutRepository extends JpaRepository<WorkoutEntity, Long> {
+public interface WorkoutRepository extends JpaRepository<WorkoutEntity, UUID> {
     List<WorkoutEntity> findByUserAndStatus(UserEntity user, WorkoutStatus status);
 
     Page<WorkoutEntity> findByUser(UserEntity user, Pageable pageable);
 
-    Optional<WorkoutEntity> findByIdAndUser(Long id, UserEntity user);
+    Optional<WorkoutEntity> findByIdAndUser(UUID id, UserEntity user);
 }

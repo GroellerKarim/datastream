@@ -1,9 +1,16 @@
 package eu.groeller.ds.service.exercise;
 
+import eu.groeller.ds.domain.User;
 import eu.groeller.ds.domain.exception.InvalidExerciseEntryException;
 import eu.groeller.ds.domain.exercise.DistanceUnit;
+import eu.groeller.ds.domain.exercise.ExerciseDefinition;
+import eu.groeller.ds.domain.exercise.ExerciseEntry;
+import eu.groeller.ds.domain.exercise.ExerciseSet;
 import eu.groeller.ds.domain.exercise.ExerciseType;
+import eu.groeller.ds.domain.exercise.SetMetrics;
+import eu.groeller.ds.domain.exercise.Workout;
 import eu.groeller.ds.domain.exercise.WorkoutStatus;
+import eu.groeller.ds.domain.exercise.WorkoutType;
 import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.entity.exercise.ExerciseDefinitionEntity;
 import eu.groeller.ds.persistence.entity.exercise.ExerciseEntryEntity;
@@ -30,6 +37,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -55,7 +63,7 @@ class WorkoutServiceTest {
         now = OffsetDateTime.now().truncatedTo(ChronoUnit.MICROS);
         var clock = Clock.fixed(now.toInstant(), now.getOffset());
         workoutService = new WorkoutService(workoutRepository, workoutTypeRepository, exerciseDefinitionRepository, clock);
-        testUser = new UserEntity("testuser", "test@example.com", "kc-test-123");
+        testUser = UserEntity.from(new User("testuser", "test@example.com", "kc-test-123"));
     }
 
     private CreateExerciseSetRequest weightRepsSet(int order, int startMinute) {
@@ -68,7 +76,7 @@ class WorkoutServiceTest {
 
         @Test
         void createsActiveWorkout() {
-            var workoutType = new WorkoutTypeEntity("Push Day");
+            var workoutType = WorkoutTypeEntity.from(new WorkoutType("Push Day"));
             var request = new StartWorkoutRequest("Push Day", now);
 
             when(workoutTypeRepository.findByName("Push Day")).thenReturn(Optional.of(workoutType));
@@ -115,15 +123,15 @@ class WorkoutServiceTest {
         @Test
         void addsEntryWithAllItsSets() {
             var workoutEntity = buildActiveWorkoutEntity();
-            var defEntity = new ExerciseDefinitionEntity("Bench Press", ExerciseType.WEIGHT_REPS);
-            var request = new CreateExerciseEntryRequest(1L, 1,
+            var defEntity = ExerciseDefinitionEntity.from(new ExerciseDefinition("Bench Press", ExerciseType.WEIGHT_REPS));
+            var request = new CreateExerciseEntryRequest(defEntity.getId(), 1,
                     List.of(weightRepsSet(1, 0), weightRepsSet(2, 2), weightRepsSet(3, 4)));
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
-            when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(defEntity));
+            when(workoutRepository.findByIdAndUser(workoutEntity.getId(), testUser)).thenReturn(Optional.of(workoutEntity));
+            when(exerciseDefinitionRepository.findById(defEntity.getId())).thenReturn(Optional.of(defEntity));
             when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = workoutService.addExerciseEntry(testUser, 1L, request);
+            var result = workoutService.addExerciseEntry(testUser, workoutEntity.getId(), request);
 
             assertThat(result.getSets()).hasSize(3);
             assertThat(result.getSets()).extracting(ExerciseSetEntity::getOrderIndex).containsExactly(1, 2, 3);
@@ -139,15 +147,15 @@ class WorkoutServiceTest {
         @Test
         void derivesEntryTimesAndRestFromItsSets() {
             var workoutEntity = buildActiveWorkoutEntity();
-            var defEntity = new ExerciseDefinitionEntity("Bench Press", ExerciseType.WEIGHT_REPS);
-            var request = new CreateExerciseEntryRequest(1L, 1,
+            var defEntity = ExerciseDefinitionEntity.from(new ExerciseDefinition("Bench Press", ExerciseType.WEIGHT_REPS));
+            var request = new CreateExerciseEntryRequest(defEntity.getId(), 1,
                     List.of(weightRepsSet(1, 0), weightRepsSet(2, 2), weightRepsSet(3, 4)));
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
-            when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(defEntity));
+            when(workoutRepository.findByIdAndUser(workoutEntity.getId(), testUser)).thenReturn(Optional.of(workoutEntity));
+            when(exerciseDefinitionRepository.findById(defEntity.getId())).thenReturn(Optional.of(defEntity));
             when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = workoutService.addExerciseEntry(testUser, 1L, request);
+            var result = workoutService.addExerciseEntry(testUser, workoutEntity.getId(), request);
 
             assertThat(result.getStartTime()).isEqualTo(now);
             assertThat(result.getEndTime()).isEqualTo(now.plusMinutes(5));
@@ -158,17 +166,17 @@ class WorkoutServiceTest {
         @Test
         void narrowsMetricsToTheExerciseType() {
             var workoutEntity = buildActiveWorkoutEntity();
-            var defEntity = new ExerciseDefinitionEntity("Running", ExerciseType.DISTANCE);
+            var defEntity = ExerciseDefinitionEntity.from(new ExerciseDefinition("Running", ExerciseType.DISTANCE));
             // Client sends reps as well; they are not meaningful for a DISTANCE exercise.
-            var request = new CreateExerciseEntryRequest(1L, 1, List.of(
+            var request = new CreateExerciseEntryRequest(defEntity.getId(), 1, List.of(
                     new CreateExerciseSetRequest(1, now, now.plusHours(1),
                             null, 5, null, null, 10.0, DistanceUnit.KILOMETERS, 3600L)));
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
-            when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(defEntity));
+            when(workoutRepository.findByIdAndUser(workoutEntity.getId(), testUser)).thenReturn(Optional.of(workoutEntity));
+            when(exerciseDefinitionRepository.findById(defEntity.getId())).thenReturn(Optional.of(defEntity));
             when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = workoutService.addExerciseEntry(testUser, 1L, request);
+            var result = workoutService.addExerciseEntry(testUser, workoutEntity.getId(), request);
 
             var set = result.getSets().getFirst();
             assertThat(set.getDistance()).isEqualTo(10.0);
@@ -180,13 +188,13 @@ class WorkoutServiceTest {
         @Test
         void whenSetsAreEmpty_throwsDomainException() {
             var workoutEntity = buildActiveWorkoutEntity();
-            var defEntity = new ExerciseDefinitionEntity("Bench Press", ExerciseType.WEIGHT_REPS);
-            var request = new CreateExerciseEntryRequest(1L, 1, List.of());
+            var defEntity = ExerciseDefinitionEntity.from(new ExerciseDefinition("Bench Press", ExerciseType.WEIGHT_REPS));
+            var request = new CreateExerciseEntryRequest(defEntity.getId(), 1, List.of());
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
-            when(exerciseDefinitionRepository.findById(1L)).thenReturn(Optional.of(defEntity));
+            when(workoutRepository.findByIdAndUser(workoutEntity.getId(), testUser)).thenReturn(Optional.of(workoutEntity));
+            when(exerciseDefinitionRepository.findById(defEntity.getId())).thenReturn(Optional.of(defEntity));
 
-            assertThatThrownBy(() -> workoutService.addExerciseEntry(testUser, 1L, request))
+            assertThatThrownBy(() -> workoutService.addExerciseEntry(testUser, workoutEntity.getId(), request))
                     .isInstanceOf(InvalidExerciseEntryException.class)
                     .hasMessageContaining("at least one set");
             verify(workoutRepository, never()).save(any());
@@ -194,22 +202,24 @@ class WorkoutServiceTest {
 
         @Test
         void whenWorkoutNotFound_throwsNotFoundException() {
-            var request = new CreateExerciseEntryRequest(1L, 1, List.of(weightRepsSet(1, 0)));
-            when(workoutRepository.findByIdAndUser(99L, testUser)).thenReturn(Optional.empty());
+            var unknownId = UUID.randomUUID();
+            var request = new CreateExerciseEntryRequest(UUID.randomUUID(), 1, List.of(weightRepsSet(1, 0)));
+            when(workoutRepository.findByIdAndUser(unknownId, testUser)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> workoutService.addExerciseEntry(testUser, 99L, request))
+            assertThatThrownBy(() -> workoutService.addExerciseEntry(testUser, unknownId, request))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
         @Test
         void whenExerciseDefinitionNotFound_throwsNotFoundException() {
             var workoutEntity = buildActiveWorkoutEntity();
-            var request = new CreateExerciseEntryRequest(99L, 1, List.of(weightRepsSet(1, 0)));
+            var unknownDefinitionId = UUID.randomUUID();
+            var request = new CreateExerciseEntryRequest(unknownDefinitionId, 1, List.of(weightRepsSet(1, 0)));
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
-            when(exerciseDefinitionRepository.findById(99L)).thenReturn(Optional.empty());
+            when(workoutRepository.findByIdAndUser(workoutEntity.getId(), testUser)).thenReturn(Optional.of(workoutEntity));
+            when(exerciseDefinitionRepository.findById(unknownDefinitionId)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> workoutService.addExerciseEntry(testUser, 1L, request))
+            assertThatThrownBy(() -> workoutService.addExerciseEntry(testUser, workoutEntity.getId(), request))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -224,10 +234,10 @@ class WorkoutServiceTest {
 
             var request = new CompleteWorkoutRequest(now.plusHours(1));
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
+            when(workoutRepository.findByIdAndUser(workoutEntity.getId(), testUser)).thenReturn(Optional.of(workoutEntity));
             when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = workoutService.completeWorkout(testUser, 1L, request);
+            var result = workoutService.completeWorkout(testUser, workoutEntity.getId(), request);
 
             assertThat(result.getStatus()).isEqualTo(WorkoutStatus.COMPLETED);
             assertThat(result.getEndTime()).isEqualTo(now.plusHours(1));
@@ -235,10 +245,11 @@ class WorkoutServiceTest {
 
         @Test
         void whenWorkoutNotFound_throwsNotFoundException() {
+            var unknownId = UUID.randomUUID();
             var request = new CompleteWorkoutRequest(now.plusHours(1));
-            when(workoutRepository.findByIdAndUser(99L, testUser)).thenReturn(Optional.empty());
+            when(workoutRepository.findByIdAndUser(unknownId, testUser)).thenReturn(Optional.empty());
 
-            assertThatThrownBy(() -> workoutService.completeWorkout(testUser, 99L, request))
+            assertThatThrownBy(() -> workoutService.completeWorkout(testUser, unknownId, request))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
     }
@@ -250,10 +261,10 @@ class WorkoutServiceTest {
         void cancelsActiveWorkoutUsingTheInjectedClock() {
             var workoutEntity = buildActiveWorkoutEntity();
 
-            when(workoutRepository.findByIdAndUser(1L, testUser)).thenReturn(Optional.of(workoutEntity));
+            when(workoutRepository.findByIdAndUser(workoutEntity.getId(), testUser)).thenReturn(Optional.of(workoutEntity));
             when(workoutRepository.save(any(WorkoutEntity.class))).thenAnswer(i -> i.getArgument(0));
 
-            var result = workoutService.cancelWorkout(testUser, 1L);
+            var result = workoutService.cancelWorkout(testUser, workoutEntity.getId());
 
             assertThat(result.getStatus()).isEqualTo(WorkoutStatus.CANCELLED);
             assertThat(result.getEndTime()).isEqualTo(now);
@@ -261,28 +272,15 @@ class WorkoutServiceTest {
     }
 
     private WorkoutEntity buildActiveWorkoutEntity() {
-        var workoutTypeEntity = new WorkoutTypeEntity("Push Day");
-        var entity = new WorkoutEntity();
-        entity.setUser(testUser);
-        entity.setWorkoutType(workoutTypeEntity);
-        entity.setStatus(WorkoutStatus.ACTIVE);
-        entity.setStartTime(now);
-        return entity;
+        var workoutTypeEntity = WorkoutTypeEntity.from(new WorkoutType("Push Day"));
+        return WorkoutEntity.from(new Workout(testUser, workoutTypeEntity, now), testUser, workoutTypeEntity);
     }
 
     private ExerciseEntryEntity buildEntryEntity() {
-        var entryEntity = new ExerciseEntryEntity();
-        entryEntity.setExerciseDefinition(new ExerciseDefinitionEntity("Bench Press", ExerciseType.WEIGHT_REPS));
-        entryEntity.setOrderIndex(1);
-
-        var setEntity = new ExerciseSetEntity();
-        setEntity.setOrderIndex(1);
-        setEntity.setStartTime(now);
-        setEntity.setEndTime(now.plusMinutes(5));
-        setEntity.setReps(10);
-        setEntity.setWeightKg(80.0);
-        entryEntity.addSet(setEntity);
-
-        return entryEntity;
+        var defEntity = ExerciseDefinitionEntity.from(
+                new ExerciseDefinition("Bench Press", ExerciseType.WEIGHT_REPS));
+        var set = new ExerciseSet(1, now, now.plusMinutes(5),
+                SetMetrics.of(ExerciseType.WEIGHT_REPS, 80.0, 10, null, null, null, null, null));
+        return ExerciseEntryEntity.from(new ExerciseEntry(defEntity, 1, List.of(set)), defEntity);
     }
 }

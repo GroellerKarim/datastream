@@ -2,8 +2,7 @@ package eu.groeller.ds.domain;
 
 import java.time.OffsetDateTime;
 
-public interface AbstractEntityData {
-    Long getId();
+public interface AbstractEntityData extends Identifiable {
     Integer getVersion();
     OffsetDateTime getCreatedAt();
     OffsetDateTime getUpdatedAt();

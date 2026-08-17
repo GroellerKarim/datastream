@@ -61,7 +61,7 @@ class WorkoutControllerIntegrationTest {
                                                 "Bench Press " + uniqueId, ExerciseType.WEIGHT_REPS))))
                                 .andExpect(status().isCreated())
                                 .andReturn();
-                Long benchId = objectMapper.readTree(benchResult.getResponse().getContentAsString()).get("id").asLong();
+                UUID benchId = idOf(benchResult);
 
                 // 3. Start a workout
                 MvcResult workoutResult = mockMvc.perform(post("/api/v1/workouts")
@@ -75,8 +75,7 @@ class WorkoutControllerIntegrationTest {
                                 .andExpect(jsonPath("$.status").value("ACTIVE"))
                                 .andExpect(jsonPath("$.entries").isEmpty())
                                 .andReturn();
-                Long workoutId = objectMapper.readTree(workoutResult.getResponse().getContentAsString()).get("id")
-                                .asLong();
+                UUID workoutId = idOf(workoutResult);
 
                 // 4. Add one bench press entry carrying its three sets
                 List<CreateExerciseSetRequest> benchSets = new ArrayList<>();
@@ -157,8 +156,7 @@ class WorkoutControllerIntegrationTest {
                                                 new StartWorkoutRequest("Cancel Test " + uniqueId, now))))
                                 .andExpect(status().isCreated())
                                 .andReturn();
-                Long workoutId = objectMapper.readTree(workoutResult.getResponse().getContentAsString()).get("id")
-                                .asLong();
+                UUID workoutId = idOf(workoutResult);
 
                 // Cancel it
                 mockMvc.perform(patch("/api/v1/workouts/" + workoutId + "/cancel")
@@ -206,7 +204,7 @@ class WorkoutControllerIntegrationTest {
                                                 "Running " + uniqueId, ExerciseType.DISTANCE))))
                                 .andExpect(status().isCreated())
                                 .andReturn();
-                Long runId = objectMapper.readTree(runDefResult.getResponse().getContentAsString()).get("id").asLong();
+                UUID runId = idOf(runDefResult);
 
                 // Start workout
                 MvcResult workoutResult = mockMvc.perform(post("/api/v1/workouts")
@@ -218,8 +216,7 @@ class WorkoutControllerIntegrationTest {
                                                 new StartWorkoutRequest("Cardio " + uniqueId, now))))
                                 .andExpect(status().isCreated())
                                 .andReturn();
-                Long workoutId = objectMapper.readTree(workoutResult.getResponse().getContentAsString()).get("id")
-                                .asLong();
+                UUID workoutId = idOf(workoutResult);
 
                 // Add distance entry
                 mockMvc.perform(post("/api/v1/workouts/" + workoutId + "/entries")
@@ -238,5 +235,11 @@ class WorkoutControllerIntegrationTest {
                                 .andExpect(jsonPath("$.sets[0].distanceUnit").value("KILOMETERS"))
                                 .andExpect(jsonPath("$.sets[0].durationSeconds").value(3600))
                                 .andExpect(jsonPath("$.averageRestMs").doesNotExist());
+        }
+
+        /** Ids are UUIDs assigned by the domain, so they arrive on the wire as strings. */
+        private UUID idOf(MvcResult result) throws Exception {
+                return UUID.fromString(objectMapper.readTree(result.getResponse().getContentAsString())
+                                .get("id").asString());
         }
 }
