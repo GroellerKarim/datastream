@@ -39,5 +39,11 @@ public class WorkoutEntity extends AbstractJpaEntity implements WorkoutData {
     @OrderBy("orderIndex ASC")
     private List<ExerciseEntryEntity> entries = new ArrayList<>();
 
+    /** Keeps both ends of the association in step; the child owns the foreign key. */
+    public void addEntry(@NonNull ExerciseEntryEntity entry) {
+        entry.setWorkout(this);
+        this.entries.add(entry);
+    }
+
     // getDurationMs() is provided by the WorkoutData default method
 }

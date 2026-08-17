@@ -1,15 +1,20 @@
 package eu.groeller.ds.service.exercise;
 
 import eu.groeller.ds.domain.exercise.ExerciseEntry;
+import eu.groeller.ds.domain.exercise.ExerciseSet;
+import eu.groeller.ds.domain.exercise.ExerciseType;
+import eu.groeller.ds.domain.exercise.SetMetrics;
 import eu.groeller.ds.domain.exercise.Workout;
 import eu.groeller.ds.persistence.entity.UserEntity;
 import eu.groeller.ds.persistence.entity.exercise.ExerciseEntryEntity;
+import eu.groeller.ds.persistence.entity.exercise.ExerciseSetEntity;
 import eu.groeller.ds.persistence.entity.exercise.WorkoutEntity;
 import eu.groeller.ds.persistence.exercise.ExerciseDefinitionRepository;
 import eu.groeller.ds.persistence.exercise.WorkoutRepository;
 import eu.groeller.ds.persistence.exercise.WorkoutTypeRepository;
 import eu.groeller.ds.presentation.request.exercise.CompleteWorkoutRequest;
 import eu.groeller.ds.presentation.request.exercise.CreateExerciseEntryRequest;
+import eu.groeller.ds.presentation.request.exercise.CreateExerciseSetRequest;
 import eu.groeller.ds.presentation.request.exercise.StartWorkoutRequest;
 import eu.groeller.ds.service.exception.ResourceNotFoundException;
 import eu.groeller.ds.service.utils.DtoUtils;
@@ -20,6 +25,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,6 +39,7 @@ public class WorkoutService {
     private final WorkoutRepository workoutRepository;
     private final WorkoutTypeRepository workoutTypeRepository;
     private final ExerciseDefinitionRepository exerciseDefinitionRepository;
+    private final Clock clock;
 
     @Transactional
     public WorkoutEntity startWorkout(UserEntity user, StartWorkoutRequest request) {
@@ -60,7 +68,7 @@ public class WorkoutService {
     @Transactional
     public ExerciseEntryEntity addExerciseEntry(UserEntity user, Long workoutId, CreateExerciseEntryRequest request) {
         Objects.requireNonNull(request, "CreateExerciseEntryRequest must not be null");
-        DtoUtils.checkNulls(request, List.of("exerciseDefinitionId", "orderIndex", "startTime", "endTime"));
+        DtoUtils.checkNulls(request, List.of("exerciseDefinitionId", "orderIndex", "sets"));
 
         var workoutEntity = workoutRepository.findByIdAndUser(workoutId, user)
                 .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
@@ -68,40 +76,21 @@ public class WorkoutService {
         var defEntity = exerciseDefinitionRepository.findById(request.exerciseDefinitionId())
                 .orElseThrow(() -> ResourceNotFoundException.exerciseDefinition(request.exerciseDefinitionId()));
 
-        // Domain validation: creates entry (validates type-specific fields) and checks workout is ACTIVE
+        // Domain validates the sets against the exercise type and checks the workout is ACTIVE
         var workout = Workout.loadFromExisting(workoutEntity);
-        var entry = new ExerciseEntry(
-                defEntity,
-                request.orderIndex(),
-                request.startTime(),
-                request.endTime(),
-                request.weightKg(),
-                request.reps(),
-                request.failure(),
-                request.partialReps(),
-                request.distance(),
-                request.distanceUnit(),
-                request.durationSeconds());
+        var entry = new ExerciseEntry(defEntity, request.orderIndex(), toDomainSets(request.sets(), defEntity.getType()));
         workout.addEntry(entry);
 
         var entryEntity = new ExerciseEntryEntity();
-        entryEntity.setWorkout(workoutEntity);
         entryEntity.setExerciseDefinition(defEntity);
         entryEntity.setOrderIndex(entry.getOrderIndex());
-        entryEntity.setStartTime(entry.getStartTime());
-        entryEntity.setEndTime(entry.getEndTime());
-        entryEntity.setWeightKg(entry.getWeightKg());
-        entryEntity.setReps(entry.getReps());
-        entryEntity.setFailure(entry.getFailure());
-        entryEntity.setPartialReps(entry.getPartialReps());
-        entryEntity.setDistance(entry.getDistance());
-        entryEntity.setDistanceUnit(entry.getDistanceUnit());
-        entryEntity.setDurationSeconds(entry.getDurationSeconds());
+        entry.getSets().forEach(set -> entryEntity.addSet(toSetEntity(set)));
 
-        workoutEntity.getEntries().add(entryEntity);
+        workoutEntity.addEntry(entryEntity);
         workoutRepository.save(workoutEntity);
 
-        log.info("Added exercise entry [{}] to workout [{}]", defEntity.getName(), workoutId);
+        log.info("Added exercise entry [{}] with [{}] sets to workout [{}]",
+                defEntity.getName(), entry.getSets().size(), workoutId);
         return entryEntity;
     }
 
@@ -130,7 +119,7 @@ public class WorkoutService {
                 .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
 
         var workout = Workout.loadFromExisting(workoutEntity);
-        workout.cancel();
+        workout.cancel(OffsetDateTime.now(clock));
 
         workoutEntity.setStatus(workout.getStatus());
         workoutEntity.setEndTime(workout.getEndTime());
@@ -149,5 +138,35 @@ public class WorkoutService {
     public WorkoutEntity getWorkout(UserEntity user, Long workoutId) {
         return workoutRepository.findByIdAndUser(workoutId, user)
                 .orElseThrow(() -> ResourceNotFoundException.workout(workoutId));
+    }
+
+    private static List<ExerciseSet> toDomainSets(List<CreateExerciseSetRequest> sets, ExerciseType type) {
+        Objects.requireNonNull(sets, "sets must not be null");
+        return sets.stream().map(set -> {
+            DtoUtils.checkNulls(set, List.of("orderIndex", "startTime", "endTime"));
+            var metrics = SetMetrics.of(type, set.weightKg(), set.reps(), set.failure(), set.partialReps(),
+                    set.distance(), set.distanceUnit(), set.durationSeconds());
+            return new ExerciseSet(set.orderIndex(), set.startTime(), set.endTime(), metrics);
+        }).toList();
+    }
+
+    /**
+     * Flattening needs no type dispatch: {@link SetMetrics} returns null from the accessors that do
+     * not apply to a given variant.
+     */
+    private static ExerciseSetEntity toSetEntity(ExerciseSet set) {
+        var metrics = set.getMetrics();
+        var entity = new ExerciseSetEntity();
+        entity.setOrderIndex(set.getOrderIndex());
+        entity.setStartTime(set.getStartTime());
+        entity.setEndTime(set.getEndTime());
+        entity.setWeightKg(metrics.weightKg());
+        entity.setReps(metrics.reps());
+        entity.setFailure(metrics.failure());
+        entity.setPartialReps(metrics.partialReps());
+        entity.setDistance(metrics.distance());
+        entity.setDistanceUnit(metrics.distanceUnit());
+        entity.setDurationSeconds(metrics.durationSeconds());
+        return entity;
     }
 }

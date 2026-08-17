@@ -5,93 +5,106 @@ import lombok.Getter;
 import lombok.NonNull;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 
+/**
+ * One exercise performed within a workout, together with its sets.
+ * <p>
+ * This is the grouping unit that makes "3x8 bench press" a single thing rather than three
+ * unrelated rows that happen to share an exercise definition. Sets are held in {@code orderIndex}
+ * order, which is what lets the timing derivations read the first and last element directly.
+ */
 @Getter
 public class ExerciseEntry {
 
     private final ExerciseDefinitionData exerciseDefinition;
     private final Integer orderIndex;
-    private final OffsetDateTime startTime;
-    private final OffsetDateTime endTime;
-    private final Double weightKg;
-    private final Integer reps;
-    private final Boolean failure;
-    private final Integer partialReps;
-    private final Double distance;
-    private final DistanceUnit distanceUnit;
-    private final Long durationSeconds;
+    private final List<ExerciseSet> sets;
 
-    public ExerciseEntry(
-            @NonNull ExerciseDefinitionData exerciseDefinition,
-            @NonNull Integer orderIndex,
-            @NonNull OffsetDateTime startTime,
-            @NonNull OffsetDateTime endTime,
-            Double weightKg,
-            Integer reps,
-            Boolean failure,
-            Integer partialReps,
-            Double distance,
-            DistanceUnit distanceUnit,
-            Long durationSeconds) {
+    public ExerciseEntry(@NonNull ExerciseDefinitionData exerciseDefinition,
+                         @NonNull Integer orderIndex,
+                         @NonNull List<ExerciseSet> sets) {
+        this(exerciseDefinition, orderIndex, sets, true);
+    }
+
+    private ExerciseEntry(ExerciseDefinitionData exerciseDefinition,
+                          Integer orderIndex,
+                          List<ExerciseSet> sets,
+                          boolean enforceInvariants) {
         this.exerciseDefinition = exerciseDefinition;
         this.orderIndex = orderIndex;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.weightKg = weightKg;
 
-        switch (exerciseDefinition.getType()) {
-            case WEIGHT_REPS -> {
-                if (reps == null)
-                    throw InvalidExerciseEntryException.missingRequiredField("reps", "WEIGHT_REPS");
-            }
-            case DISTANCE -> {
-                if (distance == null)
-                    throw InvalidExerciseEntryException.missingRequiredField("distance", "DISTANCE");
-                if (distanceUnit == null)
-                    throw InvalidExerciseEntryException.missingRequiredField("distanceUnit", "DISTANCE");
-            }
-            case TIMED -> {
-                if (durationSeconds == null)
-                    throw InvalidExerciseEntryException.missingRequiredField("durationSeconds", "TIMED");
-            }
+        var ordered = new ArrayList<>(sets);
+        ordered.sort(Comparator.comparing(ExerciseSet::getOrderIndex));
+        if (enforceInvariants) {
+            validate(ordered, exerciseDefinition.getType());
+        }
+        this.sets = List.copyOf(ordered);
+    }
+
+    /**
+     * Rebuilds an entry from storage without re-running the creation rules. A row written under an
+     * older rule set must stay readable, so only the structural requirements of {@link SetMetrics}
+     * apply here.
+     */
+    public static ExerciseEntry loadFromExisting(@NonNull ExerciseEntryData data) {
+        var type = data.getExerciseDefinition().getType();
+        var sets = data.getSets().stream()
+                .map(set -> ExerciseSet.loadFromExisting(set, type))
+                .toList();
+
+        return new ExerciseEntry(
+                ExerciseDefinition.loadFromExisting(data.getExerciseDefinition()),
+                data.getOrderIndex(),
+                sets,
+                false);
+    }
+
+    private static void validate(List<ExerciseSet> ordered, ExerciseType type) {
+        if (ordered.isEmpty()) {
+            throw InvalidExerciseEntryException.noSets();
         }
 
-        this.failure = failure;
-        this.partialReps = (Boolean.TRUE.equals(failure) && partialReps != null && partialReps > 0)
-                ? partialReps : null;
-
-        // Store type-specific required fields plus any optional cross-type fields
-        if (exerciseDefinition.getType() == ExerciseType.DISTANCE) {
-            this.distance = distance;
-            this.distanceUnit = distanceUnit;
-            this.durationSeconds = durationSeconds;
-            this.reps = reps;
-        } else if (exerciseDefinition.getType() == ExerciseType.TIMED) {
-            this.durationSeconds = durationSeconds;
-            this.distance = distance;
-            this.distanceUnit = distanceUnit;
-            this.reps = reps;
-        } else {
-            // WEIGHT_REPS
-            this.reps = reps;
-            this.distance = distance;
-            this.distanceUnit = distanceUnit;
-            this.durationSeconds = null;
+        var seenOrders = new HashSet<Integer>();
+        ExerciseSet previous = null;
+        for (var set : ordered) {
+            if (set.getType() != type) {
+                throw InvalidExerciseEntryException.metricsTypeMismatch(type, set.getType());
+            }
+            if (!seenOrders.add(set.getOrderIndex())) {
+                throw InvalidExerciseEntryException.duplicateSetOrder(set.getOrderIndex());
+            }
+            if (previous != null && set.getStartTime().isBefore(previous.getEndTime())) {
+                throw InvalidExerciseEntryException.overlappingSets(previous.getOrderIndex(), set.getOrderIndex());
+            }
+            previous = set;
         }
     }
 
-    public static ExerciseEntry loadFromExisting(@NonNull ExerciseEntryData data) {
-        return new ExerciseEntry(
-                data.getExerciseDefinition(),
-                data.getOrderIndex(),
-                data.getStartTime(),
-                data.getEndTime(),
-                data.getWeightKg(),
-                data.getReps(),
-                data.getFailure(),
-                data.getPartialReps(),
-                data.getDistance(),
-                data.getDistanceUnit(),
-                data.getDurationSeconds());
+    public ExerciseType getType() {
+        return exerciseDefinition.getType();
+    }
+
+    public OffsetDateTime getStartTime() {
+        return SetTimings.start(sets);
+    }
+
+    public OffsetDateTime getEndTime() {
+        return SetTimings.end(sets);
+    }
+
+    public Long getDurationMs() {
+        return SetTimings.elapsedMs(sets);
+    }
+
+    public List<Long> getRestPeriodsMs() {
+        return SetTimings.restPeriodsMs(sets);
+    }
+
+    public Long getAverageRestMs() {
+        return SetTimings.averageRestMs(sets);
     }
 }

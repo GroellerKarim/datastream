@@ -1,13 +1,17 @@
 package eu.groeller.ds.persistence.entity.exercise;
 
-import eu.groeller.ds.domain.exercise.DistanceUnit;
 import eu.groeller.ds.domain.exercise.ExerciseEntryData;
 import eu.groeller.ds.persistence.entity.AbstractJpaEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * One exercise within a workout. Carries no measurements of its own and no timestamps — those
+ * live on, or are derived from, its sets.
+ */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,31 +27,16 @@ public class ExerciseEntryEntity extends AbstractJpaEntity implements ExerciseEn
     @JoinColumn(name = "exercise_definition_id", nullable = false)
     private ExerciseDefinitionEntity exerciseDefinition;
 
-    @Column(nullable = false)
+    @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
 
-    @Column(nullable = false)
-    private OffsetDateTime startTime;
+    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orderIndex ASC")
+    private List<ExerciseSetEntity> sets = new ArrayList<>();
 
-    @Column(nullable = false)
-    private OffsetDateTime endTime;
-
-    @Column(name = "weight_kg")
-    private Double weightKg;
-
-    private Integer reps;
-
-    private Boolean failure;
-
-    @Column(name = "partial_reps")
-    private Integer partialReps;
-
-    private Double distance;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "distance_unit")
-    private DistanceUnit distanceUnit;
-
-    @Column(name = "duration_seconds")
-    private Long durationSeconds;
+    /** Keeps both ends of the association in step; the child owns the foreign key. */
+    public void addSet(@NonNull ExerciseSetEntity set) {
+        set.setEntry(this);
+        this.sets.add(set);
+    }
 }
